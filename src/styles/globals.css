@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+    .default-input {
+      @apply bg-gray-50 border mt-4 border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500
+    }
+
+  }
+
+.glass{
+    background: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .workbook-container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: auto;
+  }
+  
+  .sheet {
+    margin-bottom: 40px;
+  }
+  
+  .worksheet {
+    overflow-x: auto;
+  }
+  
+  .excel-table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 20px;
+  }
+  
+  .excel-table th,
+  .excel-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+  }
+  
+  .excel-table th {
+    background-color: #f2f2f2;
+  }
+  
+  .excel-table td {
+    background-color: white;
+    min-width: 60px;
+    max-width: 100px;
+  }
+  
+  .excel-table tr:hover td {
+    background-color: #f7f7f7;
+  }
