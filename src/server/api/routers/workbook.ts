@@ -1,3 +1,4 @@
+import { DataType } from "@prisma/client";
 import { z } from "zod";
 import {
   createTRPCRouter,
@@ -24,14 +25,8 @@ export const workbookRouter = createTRPCRouter({
             create: [
               {
                 name: "Sheet 1",
-                rows: Array.from({ length: 16 }, (_, rowIndex) => ({
-                    rowNum: rowIndex + 1,
-                    cells: Array.from({ length: 16 }, (_, colIndex) => ({
-                      colNum: colIndex + 1,
-                      value: null,
-                      dataType: "TEXT",
-                    })),
-                  })),
+                rowCount: 256, // Store row and column count
+                colCount: 256,
               },
             ],
           },
@@ -48,13 +43,64 @@ export const workbookRouter = createTRPCRouter({
 
       const workbook = await ctx.db.workbook.findUnique({
         where: { id: input.id },
-        include: {sheets: true}
+        include: { sheets: {include: {charts: true}} },
       });
 
-      if (!workbook || user.id != workbook.authorId) {
-        return null
+      if (!workbook || user.id !== workbook.authorId) {
+        return null;
       }
 
       return workbook;
     }),
+
+  getUserWorkbooks: protectedProcedure.query(async ({ ctx }) => {
+    const user = ctx.session.user;
+
+    return ctx.db.workbook.findMany({
+      where: { authorId: user.id },
+    });
+  }),
+
+  updateSheet: protectedProcedure
+    .input(
+      z.object({
+        sheetId: z.string(),
+        cells: z.array(
+          z.object({
+            rowNum: z.number(),
+            colNum: z.number(),
+            value: z.string().nullable(),
+            dataType: z.nativeEnum(DataType),
+          })
+        ),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { sheetId, cells } = input;
+      console.log(cells)
+      return ctx.db.sheet.update({
+        where: { id: sheetId },
+        data: {
+          cells, // Directly update the entire array of cells
+        },
+      });
+    }),
+
+  updateSheetSize: protectedProcedure
+    .input(
+      z.object({
+        sheetId: z.string(),
+        rowCount: z.number().min(1),
+        colCount: z.number().min(1),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { sheetId, rowCount, colCount } = input;
+
+      return ctx.db.sheet.update({
+        where: { id: sheetId },
+        data: { rowCount, colCount },
+      });
+    }),
 });
+

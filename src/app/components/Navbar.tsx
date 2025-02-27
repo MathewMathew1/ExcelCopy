@@ -6,6 +6,7 @@ import { useState } from "react";
 import { VscSearch } from "react-icons/vsc";
 import Button from "./Button";
 import { ProfileImage } from "./ProfileImage";
+import UserDropdown from "./Dropdown";
 
 export const SearchBar = () => {
   const [searchedText, setSearchedText] = useState("");
@@ -50,12 +51,12 @@ export function Navbar() {
     <>
       <nav className="relative flex flex-wrap items-center justify-between border-b-2 border-gray-300 bg-gradient-to-b from-[#2e026d] to-[#15162c] px-2 py-3 text-white">
         <div className="container mx-auto flex flex-wrap items-center justify-between gap-2 px-4 sm:flex-row md:gap-0">
-          <div className="relative flex w-full justify-between lg:static lg:block lg:w-auto lg:justify-start ">
+          <div className="relative flex flex-1 justify-between lg:static lg:block lg:w-auto lg:justify-start ">
             <div className="flex items-start">
               <Link href="/">
                 <div className="flex">
                   <span className="mr-2 text-2xl font-bold text-white">
-                    Code Collab
+                    Excello
                   </span>
                 </div>
               </Link>
@@ -95,17 +96,10 @@ export function Navbar() {
               <ul className="flex list-none flex-col lg:ml-auto lg:flex-row">
                 {user !== undefined ? (
                   <li className="nav-item">
-                    <div className="flex items-center  gap-5">
-                      <Link href="/profile">
-                        <ProfileImage size="big" src={user.image} />
-                      </Link>
-                      <div className="hover:underline">
-                        <Link href="/profile">{user.name}</Link>
-                      </div>
-                    </div>
+                    <UserDropdown/>
                   </li>
                 ) : (
-                  <li className="nav-item">
+                  <li className="">
                     <Button color="black" onClick={() => void signIn()}>
                       <span className="hidden text-lg md:inline">Log in</span>
                     </Button>

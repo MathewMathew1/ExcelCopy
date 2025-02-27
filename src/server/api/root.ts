@@ -1,6 +1,10 @@
 import { postRouter } from "~/server/api/routers/post";
 import { router, publicProcedure, createCallerFactory } from "./trpc";
 import { workbookRouter } from "./routers/workbook";
+import { sheetRouter } from "./routers/sheet";
+import { userRouter } from "./routers/user";
+import { macroRouter } from "./routers/macro";
+import { chartRouter } from "./routers/charts";
 
 /**
  * This is the primary router for your server.
@@ -9,7 +13,11 @@ import { workbookRouter } from "./routers/workbook";
  */
 export const appRouter = router({
   post: postRouter,
-  workbook: workbookRouter
+  workbook: workbookRouter,
+  sheet: sheetRouter,
+  user: userRouter,
+  macro: macroRouter,
+  chart: chartRouter
 });
 
 // export type definition of API

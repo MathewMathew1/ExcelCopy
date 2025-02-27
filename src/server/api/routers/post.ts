@@ -9,7 +9,9 @@ import {
 export const postRouter = createTRPCRouter({
   hello: publicProcedure
     .input(z.object({ text: z.string() }))
-    .query(({ input }) => {
+    .query(({ input, ctx }) => {
+      ctx.db.sheet.deleteMany({});
+      ctx.db.workbook.deleteMany({});
       return {
         greeting: `Hello ${input.text}`,
       };
@@ -27,6 +29,7 @@ export const postRouter = createTRPCRouter({
     }),
 
   getLatest: protectedProcedure.query(async ({ ctx }) => {
+ 
     const post = await ctx.db.post.findFirst({
       orderBy: { createdAt: "desc" },
       where: { createdBy: { id: ctx.session.user.id } },

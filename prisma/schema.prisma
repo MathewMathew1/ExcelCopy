@@ -65,6 +65,7 @@ model User {
     sessions      Session[]
     posts         Post[]
     workbooks          Workbook[]
+    macros          Macro[]
 }
 
 model VerificationToken {
@@ -89,21 +90,54 @@ model Sheet {
   workbookId String   @db.ObjectId
   workbook   Workbook @relation(fields: [workbookId], references: [id], onDelete: Cascade)
   name       String
-  rows       Row[]
+
+  rowCount   Int      // Total number of rows
+  colCount   Int      // Total number of columns
+  cells   Cell[]   
+  charts Chart[]
 
   @@unique([workbookId, name]) 
 }
 
-type Row {
-  rowNum Int      // Row number
-  cells  Cell[]   // Embedded cells
+type Cell {
+  rowNum   Int    
+  colNum   Int    
+  value    String? 
+  dataType DataType
 }
 
-type Cell {
-  colNum   Int      // Column number
-  value    String?  // Value of the cell
-  dataType DataType // Enum representing the cell type
+model Chart {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId 
+  sheetId    String   @db.ObjectId
+  sheet      Sheet    @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+
+  name       String
+  type       ChartType
+  startRow   Int
+  startCol   Int
+  endRow     Int
+  endCol     Int
+  mode       ChartMode 
+
+  anchorRow  Int      
+  anchorCol  Int
+  width      Int
+  height     Int
+
+  createdAt  DateTime @default(now())
 }
+
+enum ChartType {
+  PIE
+  BAR
+  LINE
+}
+
+enum ChartMode {
+  COUNT
+  SUM
+}
+
 
 enum DataType {
   TEXT
@@ -111,4 +145,31 @@ enum DataType {
   DATE
   BOOLEAN
   FORMULA
+}
+
+
+model Macro {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+  code        String
+  args        MacroArg[]   // Storing an array of embedded objects
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  createdById String       @db.ObjectId
+  createdBy   User         @relation(fields: [createdById], references: [id])
+}
+
+// Embedded type for arguments
+type MacroArg {
+  name        String
+  type        ArgType
+  description String
+}
+
+enum ArgType {
+  STRING 
+  NUMBER 
+  BOOLEAN 
+  DATE
 }

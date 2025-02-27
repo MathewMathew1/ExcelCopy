@@ -41,7 +41,7 @@ const CreateWorkbookForm = () => {
   };
 
   return (
-    <div className="glass p-4 h-min mt-4 ">
+    <div className="glass p-4 h-min mt-4 max-w-[600px] flex justify-center items-center flex-col w-full">
       <form onSubmit={handleCreateWorkbook} className="space-y-4">
         <div>
           <label htmlFor="workbookName" className="block ">
