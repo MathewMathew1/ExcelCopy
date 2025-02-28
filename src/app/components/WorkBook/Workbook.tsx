@@ -265,8 +265,6 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
     },
   });
 
-  
-
   const copySheet = api.sheet.copy.useMutation({
     onSuccess: (newSheet) => {
       updateToast.addToast({
@@ -479,13 +477,10 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
       return newData;
     });
   
-    // Mark sheet as having unsaved changes
+
     unsavedChangesRef.current = { ...unsavedChangesRef.current, [sheetId]: true };
   };
   
-
-  
-
   const saveAll = async () => {
     const unsavedSheetIds = Object.keys(unsavedChangesRef.current).filter(
       (sheetId) => unsavedChangesRef.current[sheetId],
