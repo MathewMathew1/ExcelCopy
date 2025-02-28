@@ -32,7 +32,7 @@ export interface SheetContextProps {
   currentSheet: SheetWithCells;
   cells: Record<string, CellData | null>;
   sheets: SheetWithCells[];
-  workbookName: string
+  workbookName: string;
 }
 
 declare global {
@@ -43,15 +43,20 @@ declare global {
 
 export interface WorkBookUpdateContextProps {
   handleUpdateSheet: (sheetId: string) => Promise<void>;
-  handleCellChange: (sheetId: string, changes: {
-    rowNum: number;
-    colNum: number;
-    newValue: string| null;
-} | {
-    rowNum: number;
-    colNum: number;
-    newValue: string| null;
-}[]) => void
+  handleCellChange: (
+    sheetId: string,
+    changes:
+      | {
+          rowNum: number;
+          colNum: number;
+          newValue: string | null;
+        }
+      | {
+          rowNum: number;
+          colNum: number;
+          newValue: string | null;
+        }[],
+  ) => void;
   createSheet: (sheetName: string) => Promise<void>;
   setCurrentSheet: (sheetId: string) => void;
   deleteSheetFunc: (sheetId: string) => Promise<void>;
@@ -60,10 +65,10 @@ export interface WorkBookUpdateContextProps {
   deleteMacroFunc: (macroId: string) => Promise<void>;
   saveAll: () => Promise<void>;
   changeSheetSize: (newRows: number, newCols: number) => Promise<void>;
-  createChartFunc: (chart: Chart, sheetId: string) => Promise<void>
-  updateChartFunc: (chart: Chart) => Promise<void>
-  deleteChartFunc: (chartId: string) => Promise<void>
-  versionOfCharts: number
+  createChartFunc: (chart: Chart, sheetId: string) => Promise<void>;
+  updateChartFunc: (chart: Chart) => Promise<void>;
+  deleteChartFunc: (chartId: string) => Promise<void>;
+  versionOfCharts: number;
 }
 
 const SheetContext = createContext<SheetContextProps>({} as SheetContextProps);
@@ -79,10 +84,7 @@ export function useSheet() {
   return useContext(SheetContext);
 }
 
-
-
 const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
-  
   const router = useRouter();
   const pathname = usePathname();
   const updateToast = useUpdateToast();
@@ -92,7 +94,7 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
   const useUserData = useUser();
   const unsavedChangesRef = useRef<Record<string, boolean>>({});
   const saveTimers = useRef<Record<string, NodeJS.Timeout>>({});
-  const [versionOfCharts, setVersionOfCharts] = useState(1)
+  const [versionOfCharts, setVersionOfCharts] = useState(1);
 
   const trpcUtils = api.useUtils();
 
@@ -127,8 +129,8 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
       });
 
       const sheet = workbook.sheets.find((s) => s.id === data.sheetId);
-      setVersionOfCharts(prev => prev + 1)
-      sheet?.charts.push(data)
+      setVersionOfCharts((prev) => prev + 1);
+      sheet?.charts.push(data);
     },
     onError: () => {
       updateToast.addToast({
@@ -147,10 +149,10 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
 
       const sheet = workbook.sheets.find((s) => s.id === data.sheetId);
 
-      const index = sheet?.charts.findIndex(c => c.id === data.id)
-      if(index !== undefined ){
-        sheet!.charts[index] = data
-        setVersionOfCharts(prev => prev + 1)
+      const index = sheet?.charts.findIndex((c) => c.id === data.id);
+      if (index !== undefined) {
+        sheet!.charts[index] = data;
+        setVersionOfCharts((prev) => prev + 1);
       }
     },
     onError: () => {
@@ -170,12 +172,11 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
 
       const sheet = workbook.sheets.find((s) => s.id === data.sheetId);
 
-      const index = sheet?.charts.findIndex(c => c.id === data.id)
-      if(index !== undefined ){
-        sheet?.charts.splice(index, 1)
-        setVersionOfCharts(prev => prev + 1)
+      const index = sheet?.charts.findIndex((c) => c.id === data.id);
+      if (index !== undefined) {
+        sheet?.charts.splice(index, 1);
+        setVersionOfCharts((prev) => prev + 1);
       }
-
     },
     onError: () => {
       updateToast.addToast({
@@ -311,15 +312,20 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
         router.push(pathname + "?" + createQueryString("sheet", firstSheet.id));
       }
     }
-  }, [workbook, searchParams, idOfProject, createQueryString, pathname, router]);
+  }, [
+    workbook,
+    searchParams,
+    idOfProject,
+    createQueryString,
+    pathname,
+    router,
+  ]);
 
   useEffect(() => {
     if (currentSheetId) {
       router.push(pathname + "?" + createQueryString("sheet", currentSheetId));
     }
   }, [currentSheetId, createQueryString, pathname, router]);
-
-
 
   useEffect(() => {
     if (workbook && workbook.sheets.length > 0) {
@@ -330,7 +336,7 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
             value: cell.value ?? "",
             colNum: cell.colNum,
             rowNum: cell.rowNum,
-            sheetId: sheet.id
+            sheetId: sheet.id,
           };
         });
       });
@@ -340,10 +346,10 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
 
   useEffect(() => {
     if (!useUserData.userData) return;
-   
+
     if (typeof LockdownManager.apply === "undefined") {
       lockdown();
-      LockdownManager.applyLockdown()
+      LockdownManager.applyLockdown();
     }
 
     useUserData.userData?.macros.forEach((macro) => {
@@ -361,14 +367,16 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
               parseFloat: harden(parseFloat),
               console: harden(console),
             });
-             
+
+            type MacroFunction = (...args: unknown[]) => unknown;
             const func = c.evaluate(`(${macro.code})`) as unknown;
-       
+
             if (typeof func === "function") {
-              const value: unknown = (func as (...args: unknown[]) => unknown)(...args);
-            
+              const typedFunc = func as MacroFunction;
+              const value = typedFunc(...args);
+
               if (typeof value === "string") return value;
-              
+
               return "0";
             } else {
               return "ERROR: Invalid macro function";
@@ -392,24 +400,27 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
       latestCellData: Record<string, CellData | null>,
     ) => {
       if (!unsavedChangesRef.current[sheetId]) return;
-  
+
       const sheet = workbook?.sheets.find((s) => s.id === sheetId);
       if (!sheet) return;
-  
+
       const updatedCells = [];
-  
+
       for (const key in latestCellData) {
         const value = latestCellData[key];
         if (!value || value.sheetId != sheetId) continue;
         const cell = { ...value, dataType: DataType.TEXT };
-  
+
         updatedCells.push(cell);
       }
-  
+
       try {
         await updateSheet.mutateAsync({ sheetId, cells: updatedCells });
-  
-        const updatedChanges = { ...unsavedChangesRef.current, [sheetId]: false };
+
+        const updatedChanges = {
+          ...unsavedChangesRef.current,
+          [sheetId]: false,
+        };
         unsavedChangesRef.current = updatedChanges;
       } catch (error) {
         console.error("Auto-save failed:", error);
@@ -417,70 +428,68 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
     };
 
     if (!currentSheetId) return;
-  
+
     const currentTimer = saveTimers.current[currentSheetId];
-  
+
     if (currentTimer) {
       clearTimeout(currentTimer);
     }
-  
+
     const newTimer = setTimeout(() => {
       void handleAutoSave(currentSheetId, cellData);
     }, 3000);
-  
+
     saveTimers.current[currentSheetId] = newTimer;
-  
+
     return () => {
       clearTimeout(newTimer);
     };
   }, [cellData, currentSheetId, updateSheet, workbook.sheets]);
-  
 
   const handleCellChange = (
     sheetId: string,
     changes:
-      | { rowNum: number; colNum: number; newValue: string| null } 
-      | { rowNum: number; colNum: number; newValue: string| null }[]
+      | { rowNum: number; colNum: number; newValue: string | null }
+      | { rowNum: number; colNum: number; newValue: string | null }[],
   ) => {
     setCellData((prevData) => {
       const newData = { ...prevData };
-  
-      if (Array.isArray(changes)) {
 
+      if (Array.isArray(changes)) {
         changes.forEach(({ rowNum, colNum, newValue }) => {
           const cellKey = `${sheetId}-${rowNum}-${colNum}`;
 
-          if(newValue !== null){
+          if (newValue !== null) {
             newData[cellKey] = {
               value: newValue || "",
               colNum,
               rowNum,
-              sheetId: sheetId
+              sheetId: sheetId,
             };
-          }else{
+          } else {
             delete newData[cellKey];
           }
-          
         });
       } else {
- 
         const { rowNum, colNum, newValue } = changes;
         const cellKey = `${sheetId}-${rowNum}-${colNum}`;
         newData[cellKey] = {
           value: newValue ?? "",
           colNum,
           rowNum,
-          sheetId: sheetId
+          sheetId: sheetId,
         };
       }
-  
+
       return newData;
     });
-  
 
-    unsavedChangesRef.current = { ...unsavedChangesRef.current, [sheetId]: true };
+    unsavedChangesRef.current = {
+      ...unsavedChangesRef.current,
+      [sheetId]: true,
+    };
   };
-  
+
   const saveAll = async () => {
     const unsavedSheetIds = Object.keys(unsavedChangesRef.current).filter(
       (sheetId) => unsavedChangesRef.current[sheetId],
@@ -510,8 +519,6 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
       });
     }
   };
-
-  
 
   const handleUpdateSheet = async (sheetId: string) => {
     const sheet = workbook?.sheets.find((s) => s.id === sheetId);
@@ -572,15 +579,15 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
   };
 
   const createChartFunc = async (chart: Chart, sheetId: string) => {
-    await createChart.mutateAsync({...chart, sheetId});
+    await createChart.mutateAsync({ ...chart, sheetId });
   };
 
   const updateChartFunc = async (chart: Chart) => {
-    await updateChart.mutateAsync({...chart, chartId: chart.id});
+    await updateChart.mutateAsync({ ...chart, chartId: chart.id });
   };
 
   const deleteChartFunc = async (chartId: string) => {
-    await deleteChart.mutateAsync({chartId});
+    await deleteChart.mutateAsync({ chartId });
   };
 
   const createSheet = async (sheetName: string) => {
@@ -608,7 +615,7 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
         toastText: "Sheet size updated successfully",
         severity: severityColors.success,
       });
-    } catch{
+    } catch {
       updateToast.addToast({
         toastText: "Failed to update sheet size",
         severity: severityColors.error,
@@ -625,7 +632,7 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
             workbook.sheets[0]!,
           cells: cellData,
           sheets: workbook?.sheets ?? [],
-          workbookName: workbook.name
+          workbookName: workbook.name,
         }}
       >
         <WorkBookUpdateContext.Provider
@@ -643,7 +650,7 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
             deleteSheetFunc,
             renameSheetFunc,
             copySheetFunc,
-            deleteChartFunc
+            deleteChartFunc,
           }}
         >
           {loadedData ? (
@@ -653,7 +660,6 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
               <LoadingSpinner />
             </div>
           )}
-          
         </WorkBookUpdateContext.Provider>
       </SheetContext.Provider>
     </>
