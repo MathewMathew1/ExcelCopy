@@ -1,7 +1,8 @@
 'use client';
-import { ToastInfo, useToast, useUpdateToast } from "../../contexts/useToast";
+import { useToast, useUpdateToast } from "../../contexts/useToast";
+import type { ToastInfo } from "../../contexts/useToast";
 import Toast from "./Toast";
-//HELPERS
+
 const ToastContainer = (): JSX.Element => {
   const toasts = useToast();
   const toastUpdate = useUpdateToast();

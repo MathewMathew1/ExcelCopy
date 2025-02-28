@@ -1,28 +1,39 @@
-import { ArgType } from "@prisma/client";
 import { SHEET_ERRORS } from "~/types/ErrorSheet";
 import { safeEvaluate } from "./sheetHelper";
+import { Parser } from "expr-eval";
+import type { FormulaArg } from "~/types/Formula";
 
 interface FormulaMetadata {
   description: string;
-  args: { name: string; type: string; description: string }[];
+  args: FormulaArg[];
   example?: string;
+}
+
+type Context = {
+  getCellValue: (cellRef: string) => string | number | null
 }
 
 export abstract class FormulaFunctions {
   private static functions: Record<
     string,
-    (args: (string | number)[], context?: any) => number | string
+    (
+      args: (string | number)[],
+      context: Context,
+    ) => number | string
   > = {};
 
   private static metadata: Record<string, FormulaMetadata> = {};
 
-  static register<T extends any[]>(
+  static register<T extends (string | number | Date)[]>(
     name: string,
-    handler: (args: T, context?: any) => number | string,
+    handler: (args: T, context: Context) => number | string,
     metadata: FormulaMetadata,
   ) {
-    this.functions[name.toUpperCase()] = (args: any[], context?: any) => {
-      const convertedArgs = this.convertArgs(name, args, metadata);
+    this.functions[name.toUpperCase()] = (
+      args: (string|number)[],
+      context: Context,
+    ) => {
+      const convertedArgs = this.convertArgs(args, metadata, context);
       if (convertedArgs === SHEET_ERRORS.ARGS) return SHEET_ERRORS.ARGS;
 
       return handler(convertedArgs as T, context);
@@ -31,17 +42,16 @@ export abstract class FormulaFunctions {
     this.metadata[name.toUpperCase()] = metadata;
   }
 
-  // Utility function to convert arguments based on metadata
   private static convertArgs(
-    name: string,
-    args: any[],
+    args: (string|number)[],
     metadata: FormulaMetadata,
-  ): any[] | string {
+    context: Context
+  ): (string | number | Date | number[])[] | string {
     if (metadata.args[0]?.type === "number[]") {
-
       return args.map((item) => {
+        
         let numArg =
-          typeof item === "number" ? item : safeEvaluate(item as string);
+          typeof item === "number" ? item : safeEvaluate(item, context.getCellValue);
         numArg = Number.isNaN(numArg) ? 0 : numArg;
         return numArg;
       });
@@ -49,15 +59,15 @@ export abstract class FormulaFunctions {
 
     return args.map((arg, index) => {
       const expectedType = metadata.args[index]?.type;
-
+  
       if (!expectedType) return arg; // No conversion needed if type is not specified
 
       switch (expectedType) {
         case "number":
-          // Convert to number
 
+       
           let numArg =
-            typeof arg === "number" ? arg : safeEvaluate(arg as string);
+            typeof arg === "number" ? arg : safeEvaluate(arg, context.getCellValue);
           numArg = Number.isNaN(numArg) ? 0 : numArg;
           return isNaN(numArg) ? SHEET_ERRORS.ARGS : numArg;
 
@@ -65,28 +75,25 @@ export abstract class FormulaFunctions {
           return String(arg);
 
         case "number[]":
-          // Ensure the entire argument is treated as an array of numbers
           if (Array.isArray(arg)) {
             return arg.map((item) =>
               typeof item === "number" ? item : parseFloat(item as string),
             );
           } else {
-            return SHEET_ERRORS.ARGS; // If it's not an array, return an error
+            return SHEET_ERRORS.ARGS; 
           }
 
         case "date":
-          // Convert to Date
           const dateArg = typeof arg === "string" ? new Date(arg) : arg;
 
-          // Check if it's a valid date
           if (dateArg instanceof Date && !isNaN(dateArg.getTime())) {
             return dateArg;
           } else {
-            return SHEET_ERRORS.ARGS; // Return error if date is invalid
+            return SHEET_ERRORS.ARGS; 
           }
 
         default:
-          return arg; // No conversion for other types
+          return arg;
       }
     });
   }
@@ -106,7 +113,7 @@ export abstract class FormulaFunctions {
 
 FormulaFunctions.register(
   "SUM",
-  (args) => {
+  (args: number[]) => {
     return args.reduce((sum, val) => sum + val, 0);
   },
 
@@ -217,7 +224,7 @@ FormulaFunctions.register(
 
 FormulaFunctions.register(
   "IF",
-  (args: [string, any, any], context?: any) => {
+  (args: [string, string, string], context?: Context) => {
     const [conditionExpression, trueValue, falseValue] = args;
 
     if (typeof conditionExpression !== "string")
@@ -227,16 +234,17 @@ FormulaFunctions.register(
       "$1==$2",
     );
     safeCondition = safeCondition.replace(/([A-Z]\d+)/g, (match) => {
-      let value = context?.getCellValue(match) ?? "0";
-      return `"${value.toString().toUpperCase()}"`;
+      const value = context?.getCellValue(match) ?? "0";
+      return `"${String(value).toUpperCase()}"`;
     });
 
     try {
-      const conditionResult = Function(
-        `"use strict"; return (${safeCondition});`,
-      )();
+      const parser = new Parser();
+      const conditionResult = parser.evaluate(safeCondition);
+
       return conditionResult ? trueValue : falseValue;
     } catch (err) {
+      console.log(err)
       return "ERROR: Invalid Condition";
     }
   },
@@ -263,7 +271,7 @@ FormulaFunctions.register(
   },
 );
 
-FormulaFunctions.register("COUNT", (args: any[]) => args.length, {
+FormulaFunctions.register("COUNT", (args: string[]|number[]|Date[]) => args.length, {
   description: "Counts the number of provided arguments.",
   args: [
     { name: "values", type: "any[]", description: "List of items to count." },
@@ -287,6 +295,7 @@ FormulaFunctions.register(
   "TODAY",
   () => {
     const today = new Date();
+
     return `${String(today.getDate()).padStart(2, "0")}.${String(
       today.getMonth() + 1,
     ).padStart(2, "0")}.${today.getFullYear()}`;
@@ -398,9 +407,3 @@ FormulaFunctions.register(
     example: 'DAYS_BETWEEN("2024-01-01", "2024-01-15") → 14',
   },
 );
-
-// Helper for date validation
-const isValidDate = (value: string): Date | null => {
-  const parsedDate = new Date(value);
-  return !isNaN(parsedDate.getTime()) ? parsedDate : null;
-};

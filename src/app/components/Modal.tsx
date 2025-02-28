@@ -18,7 +18,7 @@ const Modal = ({ children, onClose }: { children: React.ReactNode, onClose: () =
 
   return (
     <div
-      className="relative z-[100]"
+      className="relative z-[6000]"
       aria-labelledby="modal-title"
       role="dialog"
       aria-modal="true" 

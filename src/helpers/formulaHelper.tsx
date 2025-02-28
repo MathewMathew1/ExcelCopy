@@ -7,7 +7,7 @@ export const updateFormulaReferences = (
 ): string => {
   const cellReferencePattern = /([A-Z]+)(\d+)/g;
 
-  return formula.replace(cellReferencePattern, (match, col, row) => {
+  return formula.replace(cellReferencePattern, (match, col: string, row: string) => {
     const newCol = shiftColumn(col, colOffset);
     const newRow = parseInt(row) + rowOffset;
     return `${newCol}${newRow}`;
@@ -62,7 +62,7 @@ export const updateFormulaForDraggedCell = (
   const colOffset = targetCol - startCol;
 
   const colToNum = (col: string) => {
-    return col.split('').reduce((acc, char, i) => {
+    return col.split('').reduce((acc, char) => {
       return acc * 26 + (char.charCodeAt(0) - 64);
     }, 0);
   };
@@ -78,7 +78,7 @@ export const updateFormulaForDraggedCell = (
     return col;
   };
 
-  const updatedFormula = formula.replace(/([A-Z]+)(\d+)/g, (_, colRef, rowRef) => {
+  const updatedFormula = formula.replace(/([A-Z]+)(\d+)/g, (_, colRef: string, rowRef: string) => {
     const newColNum = colToNum(colRef) + colOffset;
     const newRowNum = parseInt(rowRef, 10) + rowOffset;
     const newColRef = numToCol(newColNum);

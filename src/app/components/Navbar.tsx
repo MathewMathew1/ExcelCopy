@@ -5,7 +5,6 @@ import { useRouter } from "next/router";
 import { useState } from "react";
 import { VscSearch } from "react-icons/vsc";
 import Button from "./Button";
-import { ProfileImage } from "./ProfileImage";
 import UserDropdown from "./Dropdown";
 
 export const SearchBar = () => {

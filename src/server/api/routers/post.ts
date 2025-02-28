@@ -9,9 +9,9 @@ import {
 export const postRouter = createTRPCRouter({
   hello: publicProcedure
     .input(z.object({ text: z.string() }))
-    .query(({ input, ctx }) => {
-      ctx.db.sheet.deleteMany({});
-      ctx.db.workbook.deleteMany({});
+    .query(async({ input, ctx }) => {
+      await ctx.db.sheet.deleteMany({});
+      await ctx.db.workbook.deleteMany({});
       return {
         greeting: `Hello ${input.text}`,
       };

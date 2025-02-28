@@ -1,7 +1,7 @@
 "use client";
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext} from "react";
 import { api } from "~/trpc/react";
-import { UserData } from "~/types/User";
+import type { UserData } from "~/types/User";
 import { useSession } from "next-auth/react";
 
 export interface UserContextProps {
@@ -17,7 +17,7 @@ export function useUser() {
 export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { data: session, status } = useSession(); // Check user session
+  const { status } = useSession(); // Check user session
   const isLoggedIn = status === "authenticated";
 
   const { data: userData } = api.user.getData.useQuery(undefined, {

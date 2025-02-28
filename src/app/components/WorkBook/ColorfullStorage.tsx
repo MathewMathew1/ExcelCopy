@@ -1,4 +1,4 @@
-import { Sheet } from "@prisma/client";
+import type { Sheet } from "@prisma/client";
 import React, { useEffect, useState } from "react";
 import { useSheet } from "./Workbook";
 import { useCellContext } from "~/contexts/useCellContext";
@@ -11,11 +11,13 @@ export type SelectedArea = {
   sheet: Sheet;
 };
 
+type Rectangle = { top: number; left: number; width: number; height: number; color: string; bg: string }
+
 const ColorfulCellStorage = ({scrollLeft, scrollTop}: {scrollLeft: number, scrollTop: number}) => {
   const cellContext = useCellContext()
   const workbook = useSheet();
   const [rectangles, setRectangles] = useState<
-    { top: number; left: number; width: number; height: number; color: string; bg: string }[]
+  Rectangle[]
   >([]);
 
   const selectedAreas = cellContext.selectedAreas
@@ -63,8 +65,8 @@ const ColorfulCellStorage = ({scrollLeft, scrollTop}: {scrollLeft: number, scrol
     });
 
 
-    setRectangles(newRects.filter(Boolean) as any);
-  }, [selectedAreas, workbook.currentSheet.id]);
+    setRectangles(newRects.filter(Boolean) as Rectangle[]);
+  }, [workbook.currentSheet.id, scrollLeft, scrollTop, selectedAreas]);
 
   return (
     <div className="relative" style={{ transform: `translate(${-scrollLeft}px, ${-scrollTop}px)` }}>

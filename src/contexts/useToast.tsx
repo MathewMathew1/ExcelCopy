@@ -1,7 +1,8 @@
 'use client';
 import  {createContext, useContext, useEffect, useState,} from "react";
 import useArray from "../hooks/useArray";
-import { severityColors } from "../types/Toast";
+import type { severityColors } from "../types/Toast";
+import type { ReactNode}  from "react";
 
 const SNACKBAR_SCREEN_TIME = 5000
 const MAXIMUM_AMOUNT_OF_SNACKBARS = 3
@@ -33,15 +34,15 @@ export function useUpdateToast(){
     return useContext(ToastUpdate)
 }
 
-const ToastProvider = ({ children }: {children: any}): JSX.Element => {
+const ToastProvider = ({ children }: {children: ReactNode}): JSX.Element => {
     const toastInfos = useArray<ToastInfo>([])
     const [idToDelete, setIdToDelete] = useState<number|null>(null)
 
     useEffect(() => {
-        let toastInfo = sessionStorage.getItem("toast")
+        const toastInfo = sessionStorage.getItem("toast")
         if(toastInfo){
             sessionStorage.removeItem("toast")
-            let toastInfoParsed: ToastInfo = JSON.parse(toastInfo)
+            const toastInfoParsed: ToastInfo = JSON.parse(toastInfo) as ToastInfo
             addToast({toastText: toastInfoParsed.message, severity: toastInfoParsed.severity})
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -52,9 +53,12 @@ const ToastProvider = ({ children }: {children: any}): JSX.Element => {
         if(toastInfos.array.length >= MAXIMUM_AMOUNT_OF_SNACKBARS){
             toastInfos.removeValueByIndex(0)
         }
+        
         toastInfos.push({message: toastText, severity, id: idOfNextToast})
-        let idOfCreatedToast = idOfNextToast
+        
+        const idOfCreatedToast = idOfNextToast
         idOfNextToast += 1
+
         setTimeout(() => setIdToDelete(idOfCreatedToast)
         , SNACKBAR_SCREEN_TIME)
     }

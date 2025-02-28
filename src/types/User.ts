@@ -1,4 +1,4 @@
-import { Macro, Workbook } from "@prisma/client"
+import type { Macro, Workbook } from "@prisma/client"
 
 export type UserData = {
     id: string,

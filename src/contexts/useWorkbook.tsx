@@ -1,5 +1,6 @@
-import React, { createContext, useContext, ReactNode } from "react";
-import { Sheet as SheetModel } from "@prisma/client";
+import React, { createContext, useContext } from "react";
+import type { ReactNode}  from "react";
+import type { Sheet as SheetModel } from "@prisma/client";
 
 interface Workbook {
   name: string;

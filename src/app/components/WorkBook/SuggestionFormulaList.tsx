@@ -1,12 +1,9 @@
-import React, {
-  useState,
-  useEffect,
-  ReactElement,
-  cloneElement,
-  useRef,
-} from "react";
+import React, { useState, useEffect, cloneElement } from "react";
+import type { ReactElement } from "react";
 import { FormulaFunctions } from "~/helpers/formulasSheet";
 import { createPortal } from "react-dom";
+import { calculateCurrentArgIndex } from "~/helpers/suggestions";
+import type { FormulaArg } from "~/types/Formula";
 
 interface SuggestionFormulaListProps {
   value: string;
@@ -33,31 +30,7 @@ const SuggestionFormulaList: React.FC<SuggestionFormulaListProps> = ({
 
   const [isFocused, setIsFocused] = useState(false);
 
-  const calculateCurrentArgIndex = (
-    cursorPosition: number,
-    argsString: string,
-  ) => {
-    const textBeforeCursor = value.slice(0, cursorPosition);
-    const openParenIndex = textBeforeCursor.lastIndexOf("(");
 
-    if (openParenIndex === -1) {
-      return -1;
-    }
-
-    const argsSection = textBeforeCursor.substring(openParenIndex + 1);
-    const relativePosition = cursorPosition - openParenIndex - 1;
-    const args = argsSection.split(";").map((arg) => arg.trim());
-
-    let totalLength = 0;
-
-    for (let i = 0; i < args.length; i++) {
-      totalLength += args[i]!.length + 1;
-      if (relativePosition < totalLength) {
-        return i;
-      }
-    }
-    return args.length - 1;
-  };
 
   const getLastWordBeforeCursor = (
     value: string,
@@ -79,7 +52,7 @@ const SuggestionFormulaList: React.FC<SuggestionFormulaListProps> = ({
       }
     }
 
-    const charAfterCursor = value[cursorPosition] || "";
+    const charAfterCursor = value[cursorPosition] ?? "";
 
     if (
       lastMatch &&
@@ -100,7 +73,9 @@ const SuggestionFormulaList: React.FC<SuggestionFormulaListProps> = ({
     if (openParenIndex === -1) return null;
 
     const textBeforeParen = value.slice(0, openParenIndex);
-    const funcMatch = textBeforeParen.match(/([A-Za-z_]+)\s*$/);
+
+    const regex = /([A-Za-z_]+)\s*$/;
+    const funcMatch = regex.exec(textBeforeParen);
 
     if (funcMatch) {
       const functionName = funcMatch[1];
@@ -120,50 +95,50 @@ const SuggestionFormulaList: React.FC<SuggestionFormulaListProps> = ({
   };
 
   useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.addEventListener("selectionchange", setupSuggestions);
+    const inputElement = inputRef.current; 
+
+    const setupSuggestions = () => {
+      const cursorPosition = inputRef.current?.selectionStart ?? 0;
+  
+      if (value.startsWith("=")) {
+        const enclosingFunction = getEnclosingFunctionName(value, cursorPosition);
+  
+        if (enclosingFunction) {
+          const argIndex = calculateCurrentArgIndex(cursorPosition, value);
+  
+          setCurrentFunction(enclosingFunction.toUpperCase());
+          setCurrentArgIndex(argIndex);
+          setSuggestions([]);
+        } else {
+          const functionName = getLastWordBeforeCursor(value, cursorPosition);
+          if (functionName) {
+            const availableSuggestions =
+              FormulaFunctions.getFunctionNames().filter((func) =>
+                func.toUpperCase().startsWith(functionName.toUpperCase()),
+              );
+            setCurrentFunction(null);
+            setSuggestions(availableSuggestions);
+          } else {
+            setCurrentFunction(null);
+            setSuggestions([]);
+          }
+        }
+      } else {
+        setCurrentFunction(null);
+        setSuggestions([]);
+      }
+    };
+
+    if (inputElement) {
+      inputElement.addEventListener("selectionchange", setupSuggestions);
+
       return () => {
-        inputRef.current?.removeEventListener(
-          "selectionchange",
-          setupSuggestions,
-        );
+        inputElement.removeEventListener("selectionchange", setupSuggestions);
       };
     }
-  }, [value]);
+  }, [value, inputRef]);
 
-  const setupSuggestions = () => {
-    const cursorPosition = inputRef.current?.selectionStart ?? 0;
-
-    if (value.startsWith("=")) {
-      const enclosingFunction = getEnclosingFunctionName(value, cursorPosition);
-
-      if (enclosingFunction) {
-        const openParenIndex = value.lastIndexOf("(", cursorPosition);
-        const argsString = value.slice(openParenIndex + 1, cursorPosition);
-        const argIndex = calculateCurrentArgIndex(cursorPosition, argsString);
-
-        setCurrentFunction(enclosingFunction.toUpperCase());
-        setCurrentArgIndex(argIndex);
-        setSuggestions([]);
-      } else {
-        const functionName = getLastWordBeforeCursor(value, cursorPosition);
-        if (functionName) {
-          const availableSuggestions =
-            FormulaFunctions.getFunctionNames().filter((func) =>
-              func.toUpperCase().startsWith(functionName.toUpperCase()),
-            );
-          setCurrentFunction(null);
-          setSuggestions(availableSuggestions);
-        } else {
-          setCurrentFunction(null);
-          setSuggestions([]);
-        }
-      }
-    } else {
-      setCurrentFunction(null);
-      setSuggestions([]);
-    }
-  };
+  
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
@@ -205,9 +180,6 @@ const SuggestionFormulaList: React.FC<SuggestionFormulaListProps> = ({
         suggestion +
         "(" +
         value.slice(cursorPosition);
-
-      const newCursorPosition =
-        cursorPosition + addedTextLength - functionNameLength;
 
       onChange(newValue);
 
@@ -293,11 +265,11 @@ const SuggestionFormulaList: React.FC<SuggestionFormulaListProps> = ({
 const RenderArgumentHints = ({
   currentFunction,
   currentArgIndex,
-  inputRef
+  inputRef,
 }: {
   currentFunction?: string | null;
   currentArgIndex: number;
-  inputRef: React.MutableRefObject<HTMLInputElement | null>
+  inputRef: React.MutableRefObject<HTMLInputElement | null>;
 }) => {
   if (currentFunction) {
     const metadata = FormulaFunctions.getMetadata(currentFunction);
@@ -305,15 +277,18 @@ const RenderArgumentHints = ({
     const numberOfElements: number = metadata ? metadata.args.length - 1 : 0;
 
     currentArgIndex = Math.min(numberOfElements, currentArgIndex);
-    if (metadata && metadata.args) {
+    if (metadata?.args) {
       return createPortal(
-        <div className="absolute z-50 mt-1 rounded border bg-gray-50 p-2 text-sm shadow-lg" style={{
-          top: inputRef.current?.getBoundingClientRect().bottom + "px",
-          left: inputRef.current?.getBoundingClientRect().left + "px",
-          position: "fixed",
-        }}>
+        <div
+          className="absolute z-50 mt-1 rounded border bg-gray-50 p-2 text-sm shadow-lg"
+          style={{
+            top: inputRef.current?.getBoundingClientRect().bottom + "px",
+            left: inputRef.current?.getBoundingClientRect().left + "px",
+            position: "fixed",
+          }}
+        >
           <strong>{currentFunction}</strong>(
-          {metadata.args.map((arg: any, index: number) => (
+          {metadata.args.map((arg: FormulaArg, index: number) => (
             <span
               key={index}
               className={`${

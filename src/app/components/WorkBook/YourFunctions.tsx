@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useUser } from "~/contexts/useUser";
 import Modal from "../Modal";
 import Button from "../Button";
-import { Macro } from "@prisma/client";
+import type { Macro } from "@prisma/client";
 import DeleteFunctionModal from "./DeleteFunctionModal";
 import MacroForm from "./MacroForm";
 
@@ -72,7 +72,7 @@ const YourFunctions = ({
                   </div>
                 ) : (
                   <div className="py-8 text-center text-gray-600">
-                    You don't have any custom functions. Create one now!
+                    You don&apos;t have any custom functions. Create one now!
                   </div>
                 )}
               </div>

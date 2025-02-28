@@ -1,7 +1,6 @@
 import React from "react";
-import { severityColors } from "~/types/Toast";
-import { AiFillCloseCircle, AiOutlineCloseCircle } from "react-icons/ai";
-import { IoIosCloseCircle } from "react-icons/io";
+import type { severityColors } from "~/types/Toast";
+
 
 interface ToastProps {
   variant: severityColors;

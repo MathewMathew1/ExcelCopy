@@ -14,25 +14,31 @@ import {
   useRouter,
   useSearchParams,
 } from "next/navigation";
-import { Chart, DataType, Sheet as SheetModel } from "@prisma/client";
-import SheetMenu from "~/app/components/WorkBook/SheetMenu";
+import { DataType } from "@prisma/client";
+import type { Chart } from "@prisma/client";
 import { useUpdateToast } from "~/contexts/useToast";
 import { severityColors } from "~/types/Toast";
 import Sheet from "~/app/components/WorkBook/Sheet";
-import { SheetWithCells, WorkBookWithSheets } from "~/types/WorkBook";
+import type { SheetWithCells, WorkBookWithSheets } from "~/types/WorkBook";
 import { useUser } from "~/contexts/useUser";
 import { FormulaFunctions } from "~/helpers/formulasSheet";
 import "ses";
 import { CONVERTED_TYPE_ARGS } from "~/types/Macro";
 import { LoadingSpinner } from "../LoadingSpinner";
-import { CellData } from "~/types/Cell";
-import A from "./A";
+import type { CellData } from "~/types/Cell";
+import { LockdownManager } from "~/helpers/customFunctions";
 
 export interface SheetContextProps {
   currentSheet: SheetWithCells;
   cells: Record<string, CellData | null>;
   sheets: SheetWithCells[];
   workbookName: string
+}
+
+declare global {
+  interface GlobalThis {
+    lockdownApplied?: boolean;
+  }
 }
 
 export interface WorkBookUpdateContextProps {
@@ -52,7 +58,7 @@ export interface WorkBookUpdateContextProps {
   copySheetFunc: (sheetId: string) => Promise<void>;
   renameSheetFunc: (sheetId: string, name: string) => Promise<void>;
   deleteMacroFunc: (macroId: string) => Promise<void>;
-  saveAll: () => void;
+  saveAll: () => Promise<void>;
   changeSheetSize: (newRows: number, newCols: number) => Promise<void>;
   createChartFunc: (chart: Chart, sheetId: string) => Promise<void>
   updateChartFunc: (chart: Chart) => Promise<void>
@@ -76,6 +82,7 @@ export function useSheet() {
 
 
 const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
+  
   const router = useRouter();
   const pathname = usePathname();
   const updateToast = useUpdateToast();
@@ -281,6 +288,16 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
   const [currentSheetId, setCurrentSheetId] = useState<string | null>(null);
   const searchParams = useSearchParams();
 
+  const createQueryString = useCallback(
+    (name: string, value: string) => {
+      const params = new URLSearchParams(searchParams!.toString());
+      params.set(name, value);
+
+      return params.toString();
+    },
+    [searchParams],
+  );
+
   useEffect(() => {
     if (!workbook || !searchParams) return;
 
@@ -296,23 +313,15 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
         router.push(pathname + "?" + createQueryString("sheet", firstSheet.id));
       }
     }
-  }, [workbook, searchParams, idOfProject]);
+  }, [workbook, searchParams, idOfProject, createQueryString, pathname, router]);
 
   useEffect(() => {
     if (currentSheetId) {
       router.push(pathname + "?" + createQueryString("sheet", currentSheetId));
     }
-  }, [currentSheetId]);
+  }, [currentSheetId, createQueryString, pathname, router]);
 
-  const createQueryString = useCallback(
-    (name: string, value: string) => {
-      const params = new URLSearchParams(searchParams!.toString());
-      params.set(name, value);
 
-      return params.toString();
-    },
-    [searchParams],
-  );
 
   useEffect(() => {
     if (workbook && workbook.sheets.length > 0) {
@@ -320,7 +329,7 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
       workbook.sheets.forEach((sheet) => {
         sheet.cells.forEach((cell) => {
           initialData[`${sheet.id}-${cell.rowNum}-${cell.colNum}`] = {
-            value: cell.value || "",
+            value: cell.value ?? "",
             colNum: cell.colNum,
             rowNum: cell.rowNum,
             sheetId: sheet.id
@@ -329,14 +338,14 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
       });
       setCellData(initialData);
     }
-  }, [workbook.id]);
+  }, [workbook.id, workbook]);
 
   useEffect(() => {
     if (!useUserData.userData) return;
-
-    if (typeof (globalThis as any).lockdownApplied === "undefined") {
+   
+    if (typeof LockdownManager.apply === "undefined") {
       lockdown();
-      (globalThis as any).lockdownApplied = true;
+      LockdownManager.applyLockdown()
     }
 
     useUserData.userData?.macros.forEach((macro) => {
@@ -354,44 +363,80 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
               parseFloat: harden(parseFloat),
               console: harden(console),
             });
-
-            const func = c.evaluate(`(${macro.code})`);
-
+             
+            const func = c.evaluate(`(${macro.code})`) as unknown;
+       
             if (typeof func === "function") {
-              return func(...args);
+              const value: unknown = (func as (...args: unknown[]) => unknown)(...args);
+            
+              if (typeof value === "string") return value;
+              
+              return "0";
             } else {
               return "ERROR: Invalid macro function";
             }
-          } catch (error) {
+          } catch {
             return "ERROR: Macro execution failed";
           }
         },
         {
-          description: macro.description || "User-defined function",
-          args: argsConverted || [],
+          description: macro.description ?? "User-defined function",
+          args: argsConverted ?? [],
         },
       );
     });
     setLoadedData(true);
-  }, [useUserData.userData?.macros]);
+  }, [useUserData.userData?.macros, useUserData.userData]);
 
   useEffect(() => {
-    if (!currentSheetId) return;
-
-    if (saveTimers.current[currentSheetId]) {
-      clearTimeout(saveTimers.current[currentSheetId]);
-    }
-
-    saveTimers.current[currentSheetId] = setTimeout(() => {
-      handleAutoSave(currentSheetId, cellData);
-    }, 3000);
-
-    return () => {
-      if (saveTimers.current[currentSheetId]) {
-        clearTimeout(saveTimers.current[currentSheetId]);
+    const handleAutoSave = async (
+      sheetId: string,
+      latestCellData: Record<string, CellData | null>,
+    ) => {
+      if (!unsavedChangesRef.current[sheetId]) return;
+  
+      const sheet = workbook?.sheets.find((s) => s.id === sheetId);
+      if (!sheet) return;
+  
+      const updatedCells = [];
+  
+      for (const key in latestCellData) {
+        const value = latestCellData[key];
+        if (!value || value.sheetId != sheetId) continue;
+        const cell = { ...value, dataType: DataType.TEXT };
+  
+        updatedCells.push(cell);
+      }
+  
+      try {
+        await updateSheet.mutateAsync({ sheetId, cells: updatedCells });
+  
+        const updatedChanges = { ...unsavedChangesRef.current, [sheetId]: false };
+        unsavedChangesRef.current = updatedChanges;
+      } catch (error) {
+        console.error("Auto-save failed:", error);
       }
     };
-  }, [cellData, currentSheetId]);
+
+    if (!currentSheetId) return;
+  
+    const currentTimer = saveTimers.current[currentSheetId];
+  
+    if (currentTimer) {
+      clearTimeout(currentTimer);
+    }
+  
+    const newTimer = setTimeout(() => {
+      void handleAutoSave(currentSheetId, cellData);
+    }, 3000);
+  
+    saveTimers.current[currentSheetId] = newTimer;
+  
+    return () => {
+      clearTimeout(newTimer);
+    };
+  }, [cellData, currentSheetId, updateSheet, workbook.sheets]);
+  
 
   const handleCellChange = (
     sheetId: string,
@@ -424,7 +469,7 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
         const { rowNum, colNum, newValue } = changes;
         const cellKey = `${sheetId}-${rowNum}-${colNum}`;
         newData[cellKey] = {
-          value: newValue || "",
+          value: newValue ?? "",
           colNum,
           rowNum,
           sheetId: sheetId
@@ -471,34 +516,7 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
     }
   };
 
-  const handleAutoSave = async (
-    sheetId: string,
-    latestCellData: Record<string, CellData | null>,
-  ) => {
-    if (!unsavedChangesRef.current[sheetId]) return;
-
-    const sheet = workbook?.sheets.find((s) => s.id === sheetId);
-    if (!sheet) return;
-
-    let updatedCells = [];
-    console.log(latestCellData);
-    for (const key in latestCellData) {
-      const value = latestCellData[key];
-      if (!value || value.sheetId != sheetId) continue;
-      const cell = { ...value, dataType: DataType.TEXT };
-
-      updatedCells.push(cell);
-    }
-
-    try {
-      await updateSheet.mutateAsync({ sheetId, cells: updatedCells });
-
-      const updatedChanges = { ...unsavedChangesRef.current, [sheetId]: false };
-      unsavedChangesRef.current = updatedChanges;
-    } catch (error) {
-      console.error("Auto-save failed:", error);
-    }
-  };
+  
 
   const handleUpdateSheet = async (sheetId: string) => {
     const sheet = workbook?.sheets.find((s) => s.id === sheetId);
@@ -506,7 +524,7 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
 
     if (!sheet) return;
 
-    let updatedCells = [];
+    const updatedCells = [];
     for (const key in cellData) {
       const value = cellData[key];
       if (!value || value.sheetId != sheetId) continue;
@@ -595,7 +613,7 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
         toastText: "Sheet size updated successfully",
         severity: severityColors.success,
       });
-    } catch (error) {
+    } catch{
       updateToast.addToast({
         toastText: "Failed to update sheet size",
         severity: severityColors.error,
@@ -608,8 +626,8 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
       <SheetContext.Provider
         value={{
           currentSheet:
-            workbook?.sheets.find((s) => s.id === currentSheetId) ??
-            workbook?.sheets[0]!,
+            workbook.sheets.find((s) => s.id === currentSheetId) ??
+            workbook.sheets[0]!,
           cells: cellData,
           sheets: workbook?.sheets ?? [],
           workbookName: workbook.name

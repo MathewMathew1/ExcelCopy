@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useSheet, useUpdateWorkBook } from "./Workbook";
 import { useCellContext } from "~/contexts/useCellContext";
 import ChartComponent from "./Charts/ChartComponent";
-import { ChartBox } from "~/types/Chart";
-import { Chart } from "@prisma/client";
-import { useWorkbook } from "~/contexts/useWorkbook";
+import type { ChartBox } from "~/types/Chart";
+import type { Chart } from "@prisma/client";
+
 
 const ChartOverlay = ({ scrollLeft, scrollTop }: { scrollLeft: number; scrollTop: number }) => {
   const workbook = useSheet();
@@ -40,28 +40,28 @@ const ChartOverlay = ({ scrollLeft, scrollTop }: { scrollLeft: number; scrollTop
         }, chart: chart}
       });
   
-    setChartBoxes(newCharts.filter(Boolean) as any);
+    setChartBoxes(newCharts.filter(Boolean) as {chartDisplayInfo: ChartBox, chart: Chart}[] );
   }, [charts, workbook.currentSheet.id, scrollLeft, scrollTop, updateWorkBook.versionOfCharts]);
 
   useEffect(() => {
-    const handleClick = (e: KeyboardEvent) => {
+    const handleClick = async (e: KeyboardEvent) => {
 
       if (e.key === "Delete") {
   
         if(cellContext.chartData?.chart?.id){
-          updateWorkBook.deleteChartFunc(cellContext.chartData?.chart?.id)
+          await updateWorkBook.deleteChartFunc(cellContext.chartData?.chart?.id)
           cellContext.setChartData(null)
         } 
             
       }
     };
 
-    document.addEventListener("keydown", handleClick);
+    document.addEventListener("keydown", (e)=>void handleClick(e));
 
     return () => {
-      document.removeEventListener("keydown", handleClick);
+      document.removeEventListener("keydown", (e)=>void handleClick(e));
     };
-  }, [cellContext.chartData]);
+  }, [cellContext.chartData, cellContext, updateWorkBook]);
 
   return (
     <div className="relative z-[500]" style={{ transform: `translate(${-scrollLeft}px, ${-scrollTop}px)` }}>

@@ -1,8 +1,6 @@
-import React, { useRef } from "react";
-import { FormulaFunctions } from "~/helpers/formulasSheet";
-import { useEffect, useState } from "react";
-import { updateFormulaReferences } from "~/helpers/formulaHelper";
-import { CellProps } from "~/types/Cell";
+import React, { useCallback, useRef } from "react";
+import { useEffect } from "react";
+import type { CellProps } from "~/types/Cell";
 import { useSheet } from "./Workbook";
 import SuggestionFormulaList from "./SuggestionFormulaList";
 import { useCellContext } from "~/contexts/useCellContext";
@@ -38,7 +36,6 @@ const Cell = ({
     dragHandler,
     setColumnWidths,
     draggedFormula,
-    columnWidths,
   } = cellContext;
 
   const tableCellRef = useRef<null | HTMLTableCellElement>(null);
@@ -46,24 +43,27 @@ const Cell = ({
 
   const workbook = useSheet();
 
-  useEffect(() => {
-    if (isEditing) {
-      scaleInput(inputRef.current?.value!);
-    }
-  }, [isEditing]);
-
-  const scaleInput = (value: string) => {
+  const scaleInput = useCallback((value: string) => {
     if (inputRef.current) {
       const font = window.getComputedStyle(inputRef.current).font;
       const width = measureTextWidth(value, font) + 10;
 
       const sizeOfTd =
-        tableCellRef.current?.getBoundingClientRect().width || 72;
-      const measuredWidth = measureTextWidth(value, font) + 10;
+        tableCellRef.current?.getBoundingClientRect().width ?? 72;
 
       inputRef.current.style.width = `${Math.max(sizeOfTd, width)}px`;
     }
-  };
+  },[inputRef])
+
+  useEffect(() => {
+    
+
+    if (isEditing && inputRef.current) {
+      scaleInput(inputRef.current.value);
+    }
+  }, [isEditing, inputRef, scaleInput]);
+
+ 
 
   const handleClick = (e: React.MouseEvent<HTMLSpanElement, MouseEvent>) => {
     setupDragging(rowNum, colNum);
@@ -74,27 +74,30 @@ const Cell = ({
 
   useEffect(() => {
     scaleInput(value);
-  }, [value]);
+  }, [value, scaleInput]);
 
   useEffect(() => {
-    setSize(displayValue.toString());
-  }, [displayValue]);
-
-  const setSize = (value: string) => {
-    if (spanRef.current) {
-      const font = window.getComputedStyle(spanRef.current).font;
-
-      const measuredWidth = measureTextWidth(value, font) + 10;
-
-      if (!columnWidths[colNum] || columnWidths[colNum] < measuredWidth) {
-        setColumnWidths((prev) => ({
-          ...prev,
-          [colNum]: Math.max(measuredWidth, 80, prev[colNum] || 80), // Ensure min width of 80px
-        }));
+    const setSize = (value: string) => {
+      if (spanRef.current) {
+        const font = window.getComputedStyle(spanRef.current).font;
+        const measuredWidth = measureTextWidth(value, font) + 10;
+  
+        setColumnWidths((prev) => {
+          if (!prev[colNum] || prev[colNum] < measuredWidth) {
+            return {
+              ...prev,
+              [colNum]: Math.max(measuredWidth, 80, prev[colNum] ?? 80),
+            };
+          }
+          return prev; 
+        });
       }
-    }
-  };
+    };
+  
+    setSize(displayValue.toString());
+  }, [displayValue, colNum, setColumnWidths]); 
 
+  
   const measureTextWidth = (text: string, font: string): number => {
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
@@ -103,7 +106,7 @@ const Cell = ({
       return context.measureText(text).width;
     }
 
-    return tableCellRef.current?.getBoundingClientRect().width || 72;
+    return tableCellRef.current?.getBoundingClientRect().width ?? 72;
   };
 
   const handleMouseMove = (rowNum: number, colNum: number) => {
@@ -139,8 +142,8 @@ const Cell = ({
     if (dragging.start) {
       const start = dragging.start;
 
-      let endRef = `${getColumnLabel(colNum)}${rowNum + 1}`;
-      let startRef = `${getColumnLabel(start.colNum)}${start.rowNum + 1}`;
+      const endRef = `${getColumnLabel(colNum)}${rowNum + 1}`;
+      const startRef = `${getColumnLabel(start.colNum)}${start.rowNum + 1}`;
 
       const differentSheets = currentCell?.sheet != workbook.currentSheet.id;
       const shouldReverse =
@@ -165,7 +168,7 @@ const Cell = ({
         expressionToAdd,
         validCharacters,
         inputRef,
-        (value, cellRef) => {
+        (value) => {
           if (dragging.end) {
             const regexEx = differentSheets
               ? /([\w\d]+!)?[A-Z]+\d+:[A-Z]+\d+(?!.*[\w\d]+![A-Z]+\d+:[A-Z]+\d+)/ // Match last Sheet1!A1:B5 or A1:B5
@@ -185,9 +188,7 @@ const Cell = ({
   };
 
   useEffect(() => {
-    const handleGlobalMouseUp = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-
+    const handleGlobalMouseUp = () => {
       if (dragging.start) {
         setDragging({ start: null, end: null });
       }
@@ -198,7 +199,7 @@ const Cell = ({
     return () => {
       document.removeEventListener("mouseup", handleGlobalMouseUp);
     };
-  }, [dragging.start]);
+  }, [dragging.start, setDragging]);
 
   const handleDrag = (
     e: React.MouseEvent<HTMLDivElement, MouseEvent>,
@@ -252,7 +253,7 @@ const Cell = ({
   };
 
   return (
-    <div style={style}>
+    <div style={style} className={`${isEditing? "z-[40]": ""}`}>
       <div
         className={`excel-cell`}
         id={`cell-${rowNum}-${colNum}`}
@@ -277,7 +278,7 @@ const Cell = ({
                 type="text"
                 onBlur={onElementBlur}
                 autoFocus
-                className="excel-input absolute left-0 top-0 box-border h-full w-fit"
+                className="excel-input absolute left-0 top-0 box-border h-full w-fit z-[10] bg-white"
               />
             </SuggestionFormulaList>
           </>

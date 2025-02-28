@@ -13,7 +13,7 @@ const DeleteSheetModal = ({isOpen, handleClose, deleteFunc, sheetId}: {
 
     const workbook = useSheet()
 
-    const sheet = workbook.sheets.find(s => s.id == sheetId) || workbook.sheets[0]!
+    const sheet = workbook.sheets.find(s => s.id == sheetId) ?? workbook.sheets[0]!
     
     const deleteSheet = () => {
         deleteFunc(sheetId)

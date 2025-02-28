@@ -1,10 +1,9 @@
 import "../styles/globals.css";
 import { auth } from "~/server/auth";
-import { api, HydrateClient } from "~/trpc/server";
+import {HydrateClient } from "~/trpc/server";
 import CreateWorkbookButton from "./components/CreateWorkBookButton";
 import UserWorkbooks from "./components/UserWorkbooks";
 import Link from "next/link";
-import A from "./components/WorkBook/A";
 
 async function Home() {
   const session = await auth();

@@ -1,7 +1,6 @@
 import { useUpdateWorkBook } from "./Workbook";
 import Button from "../Button";
-import Modal from "../Modal";
-import { Macro } from "@prisma/client";
+import type { Macro } from "@prisma/client";
 
 const DeleteFunctionModal = ({
   handleClose,

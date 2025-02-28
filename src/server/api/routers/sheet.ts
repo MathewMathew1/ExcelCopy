@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { SheetWithCells } from "~/types/WorkBook";
+import type { SheetWithCells } from "~/types/WorkBook";
 
 export const sheetRouter = createTRPCRouter({
   create: protectedProcedure
@@ -30,7 +30,7 @@ export const sheetRouter = createTRPCRouter({
         },
       });
 
-      let sheetWithCells: SheetWithCells = {
+      const sheetWithCells: SheetWithCells = {
         ...newSheet,
         cells: [],
         charts: [],

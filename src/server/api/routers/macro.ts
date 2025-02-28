@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { MacroArg } from "@prisma/client";
 import { MacroArgSchema } from "~/types/Macro";
 
 export const macroRouter = createTRPCRouter({

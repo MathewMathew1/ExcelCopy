@@ -1,6 +1,7 @@
-import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import { useSheet, useUpdateWorkBook } from "./Workbook";
-import { ContextMenu } from "./SheetTabs";
+import type { ContextMenu } from "./SheetTabs";
 import DeleteSheetModal from "./DeleteSheetModal";
 
 const SheetTabMenu = ({
@@ -49,7 +50,7 @@ const SheetTabMenu = ({
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [setContextMenu]);
 
   return (
     <div
@@ -65,8 +66,7 @@ const SheetTabMenu = ({
         onClick={() => {
           setRenamingSheetId(contextMenu.sheetId);
           setRenameValue(
-            workbook.sheets.find((s) => s.id === contextMenu.sheetId)?.name ||
-              "",
+            workbook.sheets.find((s) => s.id === contextMenu.sheetId)?.name ?? "",
           );
           setContextMenu(null);
         }}

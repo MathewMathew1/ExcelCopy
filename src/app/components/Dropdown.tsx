@@ -4,7 +4,7 @@ import { ProfileImage } from "./ProfileImage";
 
 const UserDropdown = () => {
   const session = useSession();
-  const user = session.data?.user!;
+  const user = session.data!.user;
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement|null>(null);
 

@@ -1,7 +1,13 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useSheet, useUpdateWorkBook } from "./Workbook";
 import { extractSelectedAreas, handleCellChange } from "~/helpers/sheetHelper";
-import { SelectedArea } from "./ColorfullStorage";
+import type { SelectedArea } from "./ColorfullStorage";
 import { updateFormulaForDraggedCell } from "~/helpers/formulaHelper";
 import SheetTabs from "./SheetTabs";
 import {
@@ -17,11 +23,14 @@ import { CellContext } from "~/contexts/useCellContext";
 import ExcelSheet from "./ExcelSheet";
 import { getColumnLabel } from "~/helpers/column";
 import SheetMenu from "./SheetMenu";
-import { Chart } from "@prisma/client";
+import type { Chart } from "@prisma/client";
 import ChartEditor from "./ChartEditor";
 import { EventManager } from "~/app/managers/EventManager";
+import type { EventMap } from "~/app/managers/EventManager";
+import type { CurrentCell } from "~/types/Cell";
 
-const eventManager = new EventManager
+const eventManager = new EventManager<EventMap>();
+
 
 const Sheet = () => {
   const workbook = useSheet();
@@ -39,17 +48,11 @@ const Sheet = () => {
     endRow: number;
     endCol: number;
   }>(null);
-  const [currentCell, setCurrentCell] = useState<{
-    rowNum: number;
-    colNum: number;
-    value: string;
-    sheet: string;
-    isCurrentlySelected: boolean;
-  } | null>(null);
+  const [currentCell, setCurrentCell] = useState<CurrentCell | null>(null);
   const [columnWidths, setColumnWidths] = useState<number[]>([]);
   const [chartData, setChartData] = useState<null | {
     showChart: boolean;
-    chart: Chart|null;
+    chart: Chart | null;
   }>(null);
 
   const [dragging, setDragging] = useState<{
@@ -58,69 +61,76 @@ const Sheet = () => {
   }>({ start: null, end: null });
   const [isDraggingFormula, setIsDraggingFormula] = useState(true);
 
-  const inputRef = useRef<HTMLInputElement|null>(null);
-  const mainInputRef = useRef<HTMLInputElement|null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const mainInputRef = useRef<HTMLInputElement | null>(null);
 
   const cellCache = useRef<Record<string, string | number>>({});
   const cellDependencies = useRef<Record<string, Set<string>>>({});
 
   const sheet = workbook.currentSheet;
 
-  const getCellValue = (
-    cellRef: string,
-    visited: Set<string> = new Set(),
-    sheetId?: string,
-  ): string | number => {
-    const [sheetIdentifier, simpleRef] = parseCellReferenceWithSheet(
-      cellRef,
-      sheet.id,
-      sheetId,
-    );
+  const getCellValue = useCallback(
+    (
+      cellRef: string,
+      visited: Set<string> = new Set(),
+      sheetId?: string,
+    ): string | number => {
+      const [sheetIdentifier, simpleRef] = parseCellReferenceWithSheet(
+        cellRef,
+        sheet.id,
+        sheetId,
+      );
 
-    const targetSheet = findTargetSheet(sheetIdentifier, workbook);
+      const targetSheet = findTargetSheet(sheetIdentifier, workbook);
 
-    if (!targetSheet) return `#REF!`;
-    if (Object.keys(workbook.cells).length === 0) return "";
+      if (!targetSheet) return `#REF!`;
+      if (Object.keys(workbook.cells).length === 0) return "";
 
-    const { rowIndex, colIndex } = getCellIndexes(simpleRef);
+      const { rowIndex, colIndex } = getCellIndexes(simpleRef);
 
-    let cell = targetSheet.cells.find(
-      (c) => c.colNum == colIndex && c.rowNum == rowIndex,
-    );
+      const cell = targetSheet.cells.find(
+        (c) => c.colNum == colIndex && c.rowNum == rowIndex,
+      );
 
-    if (!cell) {
-      const rowInSheet = rowIndex <= targetSheet.rowCount && rowIndex >= 0;
-      const colInSheet = colIndex <= targetSheet.colCount && colIndex >= 0;
-      if (!rowInSheet || !colInSheet) return `#REF!`;
-    }
+      if (!cell) {
+        const rowInSheet = rowIndex <= targetSheet.rowCount && rowIndex >= 0;
+        const colInSheet = colIndex <= targetSheet.colCount && colIndex >= 0;
+        if (!rowInSheet || !colInSheet) return `#REF!`;
+      }
 
-    const cellKey = getCellKey(targetSheet, rowIndex, colIndex);
+      const fullCellRef = `${targetSheet.id}!${simpleRef}`.toUpperCase();
 
-    const fullCellRef = `${targetSheet.id}!${simpleRef}`.toUpperCase();
+      if (cellCache.current[fullCellRef] !== undefined) {
+        return cellCache.current[fullCellRef];
+      }
+      if (visited.has(fullCellRef)) {
+        visited.forEach((visitedCell) => {
+          cellCache.current[visitedCell] = "#CIRC!";
+        });
+        cellCache.current[fullCellRef] = "#CIRC!";
+        throw new Error("Circular reference");
+      }
 
-    if (cellCache.current[fullCellRef] !== undefined) {
-      return cellCache.current[fullCellRef];
-    }
+      visited.add(fullCellRef);
 
-    const rawValue = workbook.cells[cellKey];
+      const rawValue =
+        workbook.cells[getCellKey(targetSheet, rowIndex, colIndex)];
 
-    if (visited.has(cellKey)) return `#CIRC!`;
+      const result: string | number = evaluateCellValue(
+        rawValue?.value,
+        targetSheet,
+        fullCellRef,
+        visited,
+        cellDependencies.current,
+        getCellValue,
+      );
 
-    visited.add(cellKey);
-    let result: string | number = evaluateCellValue(
-      rawValue?.value,
-      targetSheet,
-      fullCellRef,
-      visited,
-      cellDependencies.current,
-      getCellValue,
-    );
+      cellCache.current[fullCellRef] = result;
 
-    visited.delete(cellKey);
-    cellCache.current[fullCellRef] = result;
-
-    return result;
-  };
+      return result;
+    },
+    [sheet.id, workbook],
+  );
 
   const computedCellData = useMemo(() => {
     const newComputedCellData: Record<string, string | number> = {};
@@ -136,13 +146,13 @@ const Sheet = () => {
         newComputedCellData[cellKey] = getCellValue(
           `${getColumnLabel(columnNumber)}${rowNumber + 1}`,
         );
-      } catch (error) {
+      } catch {
         newComputedCellData[cellKey] = `#CIRC!`;
       }
     }
 
     return newComputedCellData;
-  }, [workbook, workbook.cells]);
+  }, [workbook, getCellValue]);
 
   useEffect(() => {
     if (!currentCell) {
@@ -153,7 +163,7 @@ const Sheet = () => {
     const newAreas = extractSelectedAreas(currentCell.value, sheet, workbook);
 
     setSelectedAreas(newAreas);
-  }, [currentCell]);
+  }, [currentCell, sheet, workbook]);
 
   const setupDragging = (rowNum: number, colNum: number) => {
     const activeInput =
@@ -164,7 +174,7 @@ const Sheet = () => {
           : null;
     if (!activeInput) return;
 
-    const cursorPosition = activeInput.selectionStart || 0;
+    const cursorPosition = activeInput.selectionStart ?? 0;
 
     if (currentCell?.value[cursorPosition - 1] === "(") {
       setDragging({ start: { rowNum, colNum }, end: null });
@@ -192,15 +202,16 @@ const Sheet = () => {
         if (!prev) return prev;
 
         let { value } = prev;
-      
-        let preModValue = value
+
+        const preModValue = value;
         if (modifyValueCallback) {
-          let valuePreCursor = value.slice(0, cursorPosition)
-          let valuePostCursor = value.slice(cursorPosition);
-          value = modifyValueCallback(valuePreCursor, cellRef) + valuePostCursor;
+          const valuePreCursor = value.slice(0, cursorPosition);
+          const valuePostCursor = value.slice(cursorPosition);
+          value =
+            modifyValueCallback(valuePreCursor, cellRef) + valuePostCursor;
         }
-        
-        const lenRemoved = preModValue.length - value.length
+
+        const lenRemoved = preModValue.length - value.length;
 
         if (
           (cursorPosition !== 0 &&
@@ -208,9 +219,9 @@ const Sheet = () => {
           dragging.start != null
         ) {
           const updatedValue =
-            value.slice(0, cursorPosition-lenRemoved) +
+            value.slice(0, cursorPosition - lenRemoved) +
             cellRef +
-            value.slice(cursorPosition-lenRemoved);
+            value.slice(cursorPosition - lenRemoved);
 
           activeInput.value = updatedValue;
           activeInput.setSelectionRange(
@@ -273,7 +284,6 @@ const Sheet = () => {
                 colNum: targetColPos,
                 newValue: updatedFormula,
               },
-              workbook,
               updateWorkBook,
               cellCache.current,
               cellDependencies.current,
@@ -294,7 +304,7 @@ const Sheet = () => {
     isDraggingFormula: boolean,
   ) => {
     if (eventManager.trigger("cellClick", rowNum, colNum)) {
-      return; 
+      return;
     }
 
     if (!currentCell) {
@@ -355,7 +365,6 @@ const Sheet = () => {
           colNum: currentCell.colNum,
           newValue: currentCell.value,
         },
-        workbook,
         updateWorkBook,
         cellCache.current,
         cellDependencies.current,
@@ -377,7 +386,6 @@ const Sheet = () => {
           colNum: currentCell.colNum,
           newValue: currentCell.value,
         },
-        workbook,
         updateWorkBook,
         cellCache.current,
         cellDependencies.current,
@@ -440,28 +448,28 @@ const Sheet = () => {
     handleCellChange(
       sheet.id,
       changes,
-      workbook,
       updateWorkBook,
       cellCache.current,
       cellDependencies.current,
     );
   };
 
-  const saveChangesInChart = (chart: Chart) => {
-    if(chartData?.chart){
-      updateWorkBook.updateChartFunc(chart)
-      setChartData(null)
-      return
+  const saveChangesInChart = async (chart: Chart) => {
+    if (chartData?.chart) {
+      await updateWorkBook.updateChartFunc(chart);
+      setChartData(null);
+      return;
     }
-    updateWorkBook.createChartFunc(chart, sheet.id); 
-    setChartData(null)
-  }
+
+    await updateWorkBook.createChartFunc(chart, sheet.id);
+    setChartData(null);
+  };
 
   useEffect(() => {
-    if(chartData===null || chartData?.showChart === false){
-      setSelectedAreas([])
+    if (chartData === null || chartData?.showChart === false) {
+      setSelectedAreas([]);
     }
-  }, [chartData?.showChart]);
+  }, [chartData?.showChart, chartData]);
 
   return (
     <>
@@ -529,7 +537,12 @@ const Sheet = () => {
           </div>
         </div>
         {chartData?.showChart ? (
-          <ChartEditor onSave={(chart)=>saveChangesInChart(chart)} onCancel={()=>setChartData(null)} sheet={sheet} existingChart={chartData.chart} />
+          <ChartEditor
+            onSave={(chart) => saveChangesInChart(chart)}
+            onCancel={() => setChartData(null)}
+            sheet={sheet}
+            existingChart={chartData.chart}
+          />
         ) : null}
       </CellContext.Provider>
     </>

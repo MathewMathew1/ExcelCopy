@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
-
-import { Chart, ChartMode, ChartType, Sheet } from "@prisma/client";
+import { useState, useEffect, useRef } from "react";
+import type { Chart, Sheet } from "@prisma/client";
+import { ChartMode, ChartType } from "@prisma/client";
 import Button from "../Button";
-import { ChartWithStringValues } from "~/types/Cell";
+import type { ChartWithStringValues } from "~/types/Cell";
 import { useCellContext } from "~/contexts/useCellContext";
 import { predefinedColors } from "~/helpers/colorsTriangle";
-import { SelectedArea } from "./ColorfullStorage";
+import type { SelectedArea } from "./ColorfullStorage";
 
 interface ChartEditorProps {
   sheet: Sheet;
@@ -25,9 +25,11 @@ const columnToLetter = (col: number): string => {
 };
 
 const cellToIndices = (cell: string) => {
-  if (!cell) return { row: 1, col: 1 }; // Default to A1
+  if (!cell) return { row: 1, col: 1 };
 
-  const match = cell.match(/^([A-Z]+)(\d+)$/);
+  const regex = /^([A-Z]+)(\d+)$/;
+  const match = regex.exec(cell);
+
   if (!match) return { row: 1, col: 1 };
 
   const col = match[1]!
@@ -65,7 +67,9 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
     endCell: "A2",
     anchorCell: "J1",
   });
-  const [activeField, setActiveField] = useState<"startCell" | "endCell" | "anchorCell" | null>(null);
+  const [activeField, setActiveField] = useState<
+    "startCell" | "endCell" | "anchorCell" | null
+  >(null);
   const cellContext = useCellContext();
 
   useEffect(() => {
@@ -101,7 +105,7 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
     return () => {
       document.removeEventListener("keydown", handleClick);
     };
-  }, []);
+  }, [cellContext]);
 
   const extractSelectedAreasFromIndices = (
     startRow: number,
@@ -154,8 +158,13 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
     return [selectionArea, anchorArea];
   };
 
-  useEffect(() => {
+  const cellContextRef = useRef(cellContext);
 
+  useEffect(() => {
+    cellContextRef.current = cellContext; // Keep the ref updated
+  }, [cellContext]); // Only update when cellContext changes
+
+  useEffect(() => {
     let areas: SelectedArea[] = [];
     const startIndices = cellToIndices(chartData.startCell!);
     const endIndices = cellToIndices(chartData.endCell!);
@@ -170,44 +179,42 @@ const ChartEditor: React.FC<ChartEditorProps> = ({
       anchorIndices.col - 1,
       sheet,
     );
-    setChartData((prev) => {
-      return {
-        ...prev,
-        startRow: startIndices.row - 1,
-        startCol: startIndices.col - 1,
-        endRow: endIndices.row - 1,
-        endCol: endIndices.col - 1,
-        anchorRow: anchorIndices.row - 1,
-        anchorCol: anchorIndices.col - 1,
-      };
-    });
 
-    cellContext.setSelectedAreas(areas);
-  }, [chartData.startCell, chartData.endCell, chartData.anchorCell]);
+    setChartData((prev) => ({
+      ...prev,
+      startRow: startIndices.row - 1,
+      startCol: startIndices.col - 1,
+      endRow: endIndices.row - 1,
+      endCol: endIndices.col - 1,
+      anchorRow: anchorIndices.row - 1,
+      anchorCol: anchorIndices.col - 1,
+    }));
+
+    cellContextRef.current.setSelectedAreas(areas);
+  }, [chartData.startCell, chartData.endCell, chartData.anchorCell, sheet]);
 
   useEffect(() => {
     const handleCellClick = (row: number, col: number) => {
-      if (!activeField) return false; 
+      if (!activeField) return false;
 
       const newCell = `${columnToLetter(col + 1)}${row + 1}`;
       handleChange(activeField, newCell);
 
-      return true; 
+      return true;
     };
 
     cellContext.eventManager.register("cellClick", handleCellClick, 10);
     return () => {
       cellContext.eventManager.unregister("cellClick", handleCellClick);
     };
-  }, [activeField]);
+  }, [activeField, cellContext.eventManager]);
 
   return (
-    <div className="fixed right-0 top-0 z-50 flex h-full w-80 flex-col overflow-auto border-l bg-white p-6 shadow-xl">
+    <div className="fixed right-0 top-0 z-[100] flex h-full w-80 flex-col overflow-auto border-l bg-white p-6 shadow-xl">
       <h2 className="mb-4 border-b pb-2 text-lg font-semibold">
         {existingChart ? "Edit Chart" : "Create Chart"}
       </h2>
 
-      {/* Chart Name */}
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700">
           Chart Name

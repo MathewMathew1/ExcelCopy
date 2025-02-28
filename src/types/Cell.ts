@@ -1,6 +1,6 @@
-import { Chart } from "@prisma/client";
-import { SelectedArea } from "~/app/components/WorkBook/ColorfullStorage";
-import { EventManager } from "~/app/managers/EventManager";
+import type { Chart } from "@prisma/client";
+import type { SelectedArea } from "~/app/components/WorkBook/ColorfullStorage";
+import type { EventManager, EventMap } from "~/app/managers/EventManager";
 
 type DraggingState = {
   start: { rowNum: number; colNum: number } | null;
@@ -46,13 +46,7 @@ export type CellContextProps = {
       isCurrentlySelected: boolean;
     } | null>
   >;
-  currentCell: {
-    rowNum: number;
-    colNum: number;
-    value: string;
-    sheet: string;
-    isCurrentlySelected: boolean;
-  } | null;
+  currentCell: CurrentCell|null
   setIsDraggingFormula: React.Dispatch<React.SetStateAction<boolean>>;
   isDraggingFormula: boolean;
   setupDragging: (rowNum: number, colNum: number) => void;
@@ -115,7 +109,7 @@ export type CellContextProps = {
     showChart: boolean;
     chart: Chart | null;
   } | null;
-  eventManager: EventManager
+  eventManager: EventManager<EventMap>
 };
 
 export type CellData = {
@@ -136,3 +130,11 @@ export type ChartWithStringValues = Chart & {
   endCell: string;
   anchorCell: string;
 };
+
+export type CurrentCell = {
+  rowNum: number;
+  colNum: number;
+  value: string;
+  sheet: string;
+  isCurrentlySelected: boolean;
+} 

@@ -1,7 +1,8 @@
 import React from "react";
 import Cell from "./Cell";
 import { useSheet } from "./Workbook";
-import { Sheet } from "@prisma/client";
+import type { Sheet } from "@prisma/client";
+import type { CurrentCell } from "~/types/Cell";
 
 const ListCell = ({
   data,
@@ -11,7 +12,7 @@ const ListCell = ({
 }: {
   data: {
     sheet: Sheet;
-    currentCell: any;
+    currentCell: CurrentCell|null;
     computedCellData: Record<string, string | number>;
   };
   columnIndex: number;
@@ -23,7 +24,7 @@ const ListCell = ({
 
   const cellKey = `${sheet.id}-${rowIndex}-${columnIndex}`;
   
-  const currentValue = workbook.cells[cellKey] ?? "";
+  const currentValue = workbook.cells[cellKey]?.value ?? "";
   const displayValue = computedCellData[cellKey] ?? "";
 
  

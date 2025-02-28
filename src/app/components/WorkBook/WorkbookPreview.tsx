@@ -1,4 +1,4 @@
-import { Workbook } from "@prisma/client";
+import type { Workbook } from "@prisma/client";
 import Link from "next/link";
 import Button from "../Button";
 

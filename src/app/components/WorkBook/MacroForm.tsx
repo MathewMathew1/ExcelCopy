@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { api } from "~/trpc/react";
-import { Macro } from "@prisma/client";
+import type { Macro } from "@prisma/client";
 import { useUpdateToast } from "~/contexts/useToast";
 import { severityColors } from "~/types/Toast";
 import Button from "../Button";
@@ -13,11 +13,11 @@ interface MacroFormProps {
 }
 
 const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
-  const [name, setName] = useState(macro?.name || "");
-  const [description, setDescription] = useState(macro?.description || "");
-  const [code, setCode] = useState(macro?.code || "");
+  const [name, setName] = useState(macro?.name ?? "");
+  const [description, setDescription] = useState(macro?.description ?? "");
+  const [code, setCode] = useState(macro?.code ?? "");
   const [errors, setErrors] = useState<{ name?: string; code?: string }>({});
-  const [args, setArgs] = useState<{ name: string; type: ArgType; description: string }[]>(macro?.args || []);
+  const [args, setArgs] = useState<{ name: string; type: ArgType; description: string }[]>(macro?.args ?? []);
 
   const trpcUtils = api.useUtils();
 
@@ -26,7 +26,7 @@ const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
   useEffect(() => {
     if (macro) {
       setName(macro.name);
-      setDescription(macro.description || "");
+      setDescription(macro.description ?? "");
       setCode(macro.code);
     } else {
       setName("");
@@ -55,7 +55,7 @@ const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
 
       close();
     },
-    onError: (error) => {
+    onError: () => {
       updateToast.addToast({
         toastText: "failed to create function successfully",
         severity: severityColors.error,
@@ -85,7 +85,7 @@ const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
       });
       close();
     },
-    onError: (error) => {
+    onError: () => {
       updateToast.addToast({
         toastText: "failed to update function successfully",
         severity: severityColors.error,

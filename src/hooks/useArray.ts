@@ -3,11 +3,9 @@ import { useState } from "react";
 const useArray = <T>(defaultValue: T[]) => {
     const [array, setArray] =  useState<T[]>(defaultValue)
 
-
     const push = (value: T): void => {
         setArray(array => [...array, value])
     }
-
 
     const update = (newValue: T, index: number): void => {
 
@@ -35,10 +33,10 @@ const useArray = <T>(defaultValue: T[]) => {
         const index = array.findIndex((obj: T) => obj[key] === keyValue)
 
         if(index===-1) return
-        let objectToUpdate: T = array[index]!
+        const objectToUpdate: T = array[index]!
         
-        for(let i=0; i<updatedFields.length; i++){
-            objectToUpdate[updatedFields[i]!["field"]] = updatedFields[i]!["fieldValue"]
+        for(const updatedField of updatedFields){
+            objectToUpdate[updatedField.field] = updatedField.fieldValue
         }
 
         setArray(array => [
@@ -65,16 +63,16 @@ const useArray = <T>(defaultValue: T[]) => {
     
         if (!objectToUpdate) return
             
-        for (let i = 0; i < updatedFields.length; i++) {
+        for(const updatedField of updatedFields){
             objectToUpdate = {
                 ...objectToUpdate,
-                [updatedFields[i]!["field"]]: updatedFields[i]!["fieldValue"]
+                [updatedField.field]: updatedField.fieldValue
             }
         }
     
         setArray(array => [
-            ...array.slice(0, index), // remove value
-            objectToUpdate as T, // Use type assertion here, assuming it's safe due to earlier checks
+            ...array.slice(0, index),
+            objectToUpdate,
             ...array.slice(index + 1, array.length)
         ])
     }

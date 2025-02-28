@@ -1,10 +1,10 @@
-import {
+import type {
   SheetContextProps,
 } from "~/app/components/WorkBook/Workbook";
 import { evaluateFormula } from "./sheetHelper";
-import { Cell, Sheet } from "@prisma/client";
-import { SheetWithCells } from "~/types/WorkBook";
-import { CellData, CellDataWithNull } from "~/types/Cell";
+import type { Sheet } from "@prisma/client";
+import type { SheetWithCells } from "~/types/WorkBook";
+import type { CellData, CellDataWithNull } from "~/types/Cell";
 
 export const parseCellReferenceWithSheet = (
   cellRef: string,
@@ -13,7 +13,7 @@ export const parseCellReferenceWithSheet = (
 ): [string, string] => {
   return cellRef.includes("!")
     ? (cellRef.split("!") as [string, string])
-    : [sheetId || baseSheetId, cellRef];
+    : [sheetId ?? baseSheetId, cellRef];
 };
 
 export const findTargetSheet = (
@@ -23,14 +23,15 @@ export const findTargetSheet = (
   return (
     workbook.sheets.find(
       (s) => s.id.toLowerCase() === sheetIdentifier.toLowerCase(),
-    ) || workbook.sheets.find((s) => s.name === sheetIdentifier)
+    ) ?? workbook.sheets.find((s) => s.name === sheetIdentifier)
   );
 };
 
 export const getCellIndexes = (
   simpleRef: string,
 ): { rowIndex: number; colIndex: number } => {
-  const match = simpleRef.match(/^([A-Z]+)(\d+)$/);
+  const regex = /^([A-Z]+)(\d+)$/
+  const match = regex.exec(simpleRef);
   if (!match) throw new Error("Invalid cell reference format");
 
   const [, colRef, rowRef] = match;
@@ -65,7 +66,7 @@ export const evaluateCellValue = (
   if (typeof rawValue === "string" && rawValue.startsWith("=")) {
     const result = evaluateFormula(
       rawValue,
-      (ref, sheetId) => {
+      (ref, visited, sheetId) => {
         const normalizedRef = ref.includes("!")
           ? ref
           : `${targetSheet.id}!${ref}`;
@@ -76,9 +77,10 @@ export const evaluateCellValue = (
         }
         cellDependencies[upperRef].add(fullCellRef);
 
-        return getCellValue(upperRef, new Set(visited), sheetId);
+        return getCellValue(upperRef, visited, sheetId);
       },
       targetSheet.id,
+      visited
     );
 
     return isNaN(Number(result)) && typeof result === "string"
@@ -88,6 +90,7 @@ export const evaluateCellValue = (
 
   return rawValue ?? "";
 };
+
 
 export const sortCells = ({
   start,
@@ -111,8 +114,8 @@ export const sortCells = ({
 
     for (let row = start.row; row <= end.row; row++) {
       const key = `${sheetId}-${row}-${col}`;
-      if (cellData[key] && cellData[key]!.value.trim() !== "" && computedCellData[key]) {
-        columnCells.push({ key, value: cellData[key]!.value, row, computedValue: computedCellData[key] });
+      if (cellData[key] && cellData[key].value.trim() !== "" && computedCellData[key]) {
+        columnCells.push({ key, value: cellData[key].value, row, computedValue: computedCellData[key] });
       }
     }
 
@@ -137,7 +140,7 @@ export const sortCells = ({
         };
       } else {
 
-        if (cellData[newKey] && cellData[newKey]!.value.trim() !== "") {
+        if (cellData[newKey] && cellData[newKey].value.trim() !== "") {
           updatedCells[newKey] = {
             value: null,
             colNum: col,

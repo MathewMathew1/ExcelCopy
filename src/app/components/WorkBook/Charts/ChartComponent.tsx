@@ -1,21 +1,44 @@
 "use client";
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, Title, BarElement, LineElement } from "chart.js";
-import { Chart } from "@prisma/client";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, BarElement, LineElement } from "chart.js";
+import type { Chart } from "@prisma/client";
 import { useCellContext } from "~/contexts/useCellContext";
-import { ChartBox } from "~/types/Chart";
+import type { ChartBox } from "~/types/Chart";
 import { useEffect, useState } from "react";
 import "chart.js/auto";
 import { getColumnLabel } from "~/helpers/column";
-
-// Import chart components
 import PieChartComponent from "./PieChartComponent";
 import BarChartComponent from "./BarChartComponent";
 import LineChartComponent from "./LineChartComponent";
 
-// Register necessary Chart.js elements
+
 ChartJS.register(ArcElement, Tooltip, Legend, BarElement, LineElement);
 
-const ChartComponentsMap: Record<string, React.FC<{ data: any; options: any }>> = {
+export type ChartDataType = {
+  labels: string[];
+  datasets: {
+      label: string;
+      data: number[];
+      backgroundColor: string[];
+      hoverBackgroundColor: string[];
+  }[];
+}
+
+export type ChartOptions = {
+  maintainAspectRatio: boolean;
+  responsive: boolean;
+  plugins: {
+      legend: {
+          position: "top" | "center" | "left" | "right" | "bottom";
+      };
+      title: {
+          display: boolean;
+          text: string;
+          align: "center" | "start" | "end";
+      };
+  };
+}
+
+const ChartComponentsMap: Record<string, React.FC<{ data: ChartDataType; options: ChartOptions }>> = {
   PIE: PieChartComponent,
   BAR: BarChartComponent,
   LINE: LineChartComponent,
@@ -55,7 +78,7 @@ const ChartComponent = ({
         if (isNaN(numericValue)) continue; // Skip non-numeric values
 
         if (mode === "COUNT") {
-          dataMap[numericValue] = (dataMap[numericValue] || 0) + 1;
+          dataMap[numericValue] = (dataMap[numericValue] ?? 0) + 1;
         } else if (mode === "SUM") {
           dataMap[`${getColumnLabel(col) + (row+1)}`] = numericValue;
         }
@@ -68,7 +91,7 @@ const ChartComponent = ({
     });
     console.log(newLabels)
     setChartData({ labels: newLabels, values: newValues });
-  }, [chart, cellContext.computedCellData]);
+  }, [chart, cellContext.computedCellData, endCol, endRow, mode, startCol, startRow]);
 
   const data = {
     labels: chartData.labels,
@@ -82,7 +105,7 @@ const ChartComponent = ({
     ],
   };
 
-  const options = {
+  const options: ChartOptions = {
     maintainAspectRatio: false,
     responsive: true,
     plugins: {
@@ -95,7 +118,7 @@ const ChartComponent = ({
     },
   };
 
-  const ChartComponentToRender = ChartComponentsMap[type] || (() => <p>Unsupported chart type</p>);
+  const ChartComponentToRender = ChartComponentsMap[type] ?? (() => <p>Unsupported chart type</p>);
 
   return (
     <div

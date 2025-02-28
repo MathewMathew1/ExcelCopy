@@ -64,7 +64,7 @@ const SheetTabs = () => {
                 value={renameValue}
                 onChange={(e) => setRenameValue(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") handleRename(sheet.id);
+                  if (e.key === "Enter") void handleRename(sheet.id);
                   if (e.key === "Escape") setRenamingSheetId(null);
                 }}
                 autoFocus
@@ -96,7 +96,7 @@ const SheetTabs = () => {
               value={newSheetName}
               onChange={(e) => setNewSheetName(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") handleCreateSheet();
+                if (e.key === "Enter") void  handleCreateSheet();
                 if (e.key === "Escape") setIsAdding(false);
               }}
               autoFocus
