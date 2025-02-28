@@ -369,9 +369,11 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
             });
 
             type MacroFunction = (...args: unknown[]) => unknown;
+            // eslint-disable-next-line
             const func = c.evaluate(`(${macro.code})`) as unknown;
 
             if (typeof func === "function") {
+              // eslint-disable-next-line
               const typedFunc = func as MacroFunction;
               const value = typedFunc(...args);
 
