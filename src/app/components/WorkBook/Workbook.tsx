@@ -290,7 +290,7 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
   const createQueryString = useCallback(
     (name: string, value: string) => {
       // eslint-disable-next-line
-      const params = new URLSearchParams(searchParams!.toString());
+      const params = new URLSearchParams(searchParams!);
       params.set(name, value);
 
       return params.toString();

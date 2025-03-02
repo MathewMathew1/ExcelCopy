@@ -32,7 +32,7 @@ const SheetTabMenu = ({
 
 
   const closeDeleteModal = () => {
-    console.log("234")
+
     setShowDeleteModal(false)
   }
   

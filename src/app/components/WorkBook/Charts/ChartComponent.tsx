@@ -89,7 +89,7 @@ const ChartComponent = ({
       newLabels.push(label);
       newValues.push(value);
     });
-    console.log(newLabels)
+
     setChartData({ labels: newLabels, values: newValues });
   }, [chart, cellContext.computedCellData, endCol, endRow, mode, startCol, startRow]);
 

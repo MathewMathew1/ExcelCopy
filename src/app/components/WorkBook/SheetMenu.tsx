@@ -33,7 +33,6 @@ const SheetMenu = () => {
   };
 
   const handleSort = (sortAsc: boolean) => {
-    console.log()
     const selectedArea = cellContext.selectedAreas[0];
     if (!selectedArea || cellContext.currentCell?.isCurrentlySelected === true) {
       return;
