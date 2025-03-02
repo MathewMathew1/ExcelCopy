@@ -348,7 +348,7 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
   useEffect(() => {
     if (!useUserData.userData) return;
 
-    if (typeof LockdownManager.apply === "undefined") {
+    if (LockdownManager.isLockdownApplied() === false) {
       lockdown();
       LockdownManager.applyLockdown();
     }
@@ -369,22 +369,20 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
               console: harden(console),
             });
 
-            type MacroFunction = (...args: unknown[]) => unknown;
-            // eslint-disable-next-line
             const func = c.evaluate(`(${macro.code})`) as unknown;
-
+     
             if (typeof func === "function") {
-              // eslint-disable-next-line
-              const typedFunc = func as MacroFunction;
-              const value = typedFunc(...args);
-
-              if (typeof value === "string") return value;
-
+    
+              const value: unknown = (func as (...args: unknown[]) => unknown)(...args);
+            
+              if (typeof value === "string" || typeof value === "number") return value;
+              
               return "0";
             } else {
               return "ERROR: Invalid macro function";
             }
-          } catch {
+          } catch(e) {
+            console.log(e)
             return "ERROR: Macro execution failed";
           }
         },
