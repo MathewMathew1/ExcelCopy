@@ -407,3 +407,159 @@ FormulaFunctions.register(
     example: 'DAYS_BETWEEN("2024-01-01", "2024-01-15") → 14',
   },
 );
+
+FormulaFunctions.register(
+  "AREA_RECTANGLE",
+  (args: [number, number]) => {
+    const [width, height] = args;
+    return width * height;
+  },
+  {
+    description: "Calculates the area of a rectangle.",
+    args: [
+      { name: "width", type: "number", description: "The width of the rectangle." },
+      { name: "height", type: "number", description: "The height of the rectangle." },
+    ],
+    example: "AREA_RECTANGLE(5, 10) → 50",
+  }
+);
+
+FormulaFunctions.register(
+  "AREA_CIRCLE",
+  (args: [number]) => {
+    const [radius] = args;
+    return Math.PI * Math.pow(radius, 2);
+  },
+  {
+    description: "Calculates the area of a circle.",
+    args: [
+      { name: "radius", type: "number", description: "The radius of the circle." },
+    ],
+    example: "AREA_CIRCLE(7) → 153.938",
+  }
+);
+
+FormulaFunctions.register(
+  "AREA_TRIANGLE",
+  (args: [number, number]) => {
+    const [base, height] = args;
+    return (base * height) / 2;
+  },
+  {
+    description: "Calculates the area of a triangle.",
+    args: [
+      { name: "base", type: "number", description: "The base of the triangle." },
+      { name: "height", type: "number", description: "The height of the triangle." },
+    ],
+    example: "AREA_TRIANGLE(6, 8) → 24",
+  }
+);
+
+FormulaFunctions.register(
+  "CIRCUMFERENCE",
+  (args: [number]) => {
+    const [radius] = args;
+    return 2 * Math.PI * radius;
+  },
+  {
+    description: "Calculates the circumference of a circle.",
+    args: [
+      { name: "radius", type: "number", description: "The radius of the circle." },
+    ],
+    example: "CIRCUMFERENCE(10) → 62.832",
+  }
+);
+
+FormulaFunctions.register(
+  "FACTORIAL",
+  (args: [number]) => {
+    const [n] = args;
+    if (n < 0) return "ERROR: Negative numbers not allowed";
+    return n === 0 ? 1 : Array.from({ length: n }, (_, i) => i + 1).reduce((acc, val) => acc * val, 1);
+  },
+  {
+    description: "Calculates the factorial of a number.",
+    args: [
+      { name: "n", type: "number", description: "The number to calculate factorial for." },
+    ],
+    example: "FACTORIAL(5) → 120",
+  }
+);
+
+FormulaFunctions.register(
+  "PYTHAGOREAN",
+  (args: [number, number]) => {
+    const [a, b] = args;
+    return Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2));
+  },
+  {
+    description: "Calculates the hypotenuse of a right triangle using the Pythagorean theorem.",
+    args: [
+      { name: "a", type: "number", description: "One leg of the triangle." },
+      { name: "b", type: "number", description: "The other leg of the triangle." },
+    ],
+    example: "PYTHAGOREAN(3, 4) → 5",
+  }
+);
+
+FormulaFunctions.register(
+  "LOG",
+  (args: [number, number]) => {
+    const [value, base] = args;
+    return Math.log(value) / Math.log(base);
+  },
+  {
+    description: "Calculates the logarithm of a number with a given base.",
+    args: [
+      { name: "value", type: "number", description: "The number to take the log of." },
+      { name: "base", type: "number", description: "The base of the logarithm." },
+    ],
+    example: "LOG(100, 10) → 2",
+  }
+);
+
+FormulaFunctions.register(
+  "EXP",
+  (args: [number]) => {
+    const [value] = args;
+    return Math.exp(value);
+  },
+  {
+    description: "Calculates the exponential function e^x.",
+    args: [
+      { name: "value", type: "number", description: "The exponent to raise e to." },
+    ],
+    example: "EXP(2) → 7.389",
+  }
+);
+
+FormulaFunctions.register(
+  "SIN",
+  (args: [number]) => Math.sin(args[0]),
+  {
+    description: "Calculates the sine of an angle (in radians).",
+    args: [{ name: "angle", type: "number", description: "Angle in radians." }],
+    example: "SIN(PI/2) → 1",
+  }
+);
+
+FormulaFunctions.register(
+  "COS",
+  (args: [number]) => Math.cos(args[0]),
+  {
+    description: "Calculates the cosine of an angle (in radians).",
+    args: [{ name: "angle", type: "number", description: "Angle in radians." }],
+    example: "COS(PI) → -1",
+  }
+);
+
+FormulaFunctions.register(
+  "TAN",
+  (args: [number]) => Math.tan(args[0]),
+  {
+    description: "Calculates the tangent of an angle (in radians).",
+    args: [{ name: "angle", type: "number", description: "Angle in radians." }],
+    example: "TAN(PI/4) → 1",
+  }
+);
+
