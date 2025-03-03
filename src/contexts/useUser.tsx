@@ -5,6 +5,7 @@ import type { UserData } from "~/types/User";
 import { useSession } from "next-auth/react";
 
 export interface UserContextProps {
+  loadingStatus: "error" | "success" | "pending" 
   userData?: UserData | null;
 }
 
@@ -20,12 +21,12 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({
   const { status } = useSession(); // Check user session
   const isLoggedIn = status === "authenticated";
 
-  const { data: userData } = api.user.getData.useQuery(undefined, {
+  const { data: userData, status: loadingStatus } = api.user.getData.useQuery(undefined, {
     enabled: isLoggedIn, 
   });
 
   return (
-    <UserContext.Provider value={{ userData }}>
+    <UserContext.Provider value={{ userData, loadingStatus }}>
       {children}
     </UserContext.Provider>
   );
