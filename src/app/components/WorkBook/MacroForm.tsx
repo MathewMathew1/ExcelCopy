@@ -350,7 +350,7 @@ const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
               />
             </div>
           ))}
-
+          <div className="flex justify-end">
           <Button
             onClick={(e) => {
               e.preventDefault();
@@ -360,7 +360,7 @@ const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
           >
             Run Test
           </Button>
-
+          </div>
           {testResult !== null && (
             <div className="rounded-md border p-2 text-sm">
               <strong>Result:</strong> {testResult}

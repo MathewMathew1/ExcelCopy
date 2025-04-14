@@ -31,7 +31,6 @@ import type { CurrentCell } from "~/types/Cell";
 
 const eventManager = new EventManager<EventMap>();
 
-
 const Sheet = () => {
   const workbook = useSheet();
   const updateWorkBook = useUpdateWorkBook();
@@ -471,6 +470,52 @@ const Sheet = () => {
     }
   }, [chartData?.showChart, chartData]);
 
+  const handleKeyMovements = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    console.log(e.key);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Prevent arrow keys from doing weird things while focused on inputs
+      if (
+        document.activeElement &&
+        document.activeElement.tagName === "INPUT"
+      ) {
+        return;
+      }
+
+      if (!currentCell) return;
+
+      let newRow = currentCell.rowNum;
+      let newCol = currentCell.colNum;
+
+      switch (e.key) {
+        case "ArrowUp":
+          newRow = Math.max(currentCell.rowNum - 1, 0);
+          break;
+        case "ArrowDown":
+          newRow = currentCell.rowNum + 1;
+          break;
+        case "ArrowLeft":
+          newCol = Math.max(currentCell.colNum - 1, 0);
+          break;
+        case "ArrowRight":
+          newCol = currentCell.colNum + 1;
+          break;
+        default:
+          return; // Don't do anything on other keys
+      }
+
+      setCurrentCell({ ...currentCell, rowNum: newRow, colNum: newCol   });
+      e.preventDefault();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [currentCell]);
+
   return (
     <>
       <CellContext.Provider
@@ -506,7 +551,10 @@ const Sheet = () => {
           handleKeyPress: handleKeyPressInInput,
         }}
       >
-        <div className="sheet relative flex h-full flex-col">
+        <div
+          className="sheet relative flex h-full flex-col"
+          onKeyDown={(e) => handleKeyMovements(e)}
+        >
           <SheetMenu />
           <div className="workbook-container flex flex-col">
             <h1>{workbook?.workbookName}</h1>
