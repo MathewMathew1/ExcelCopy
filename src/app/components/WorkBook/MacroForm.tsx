@@ -17,7 +17,12 @@ const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
   const [description, setDescription] = useState(macro?.description ?? "");
   const [code, setCode] = useState(macro?.code ?? "");
   const [errors, setErrors] = useState<{ name?: string; code?: string }>({});
-  const [args, setArgs] = useState<{ name: string; type: ArgType; description: string }[]>(macro?.args ?? []);
+  const [args, setArgs] = useState<
+    { name: string; type: ArgType; description: string }[]
+  >(macro?.args ?? []);
+  const [testArgs, setTestArgs] = useState<string[]>([]);
+  const [testResult, setTestResult] = useState<string | null>(null);
+  const [testError, setTestError] = useState<string | null>(null);
 
   const trpcUtils = api.useUtils();
 
@@ -123,7 +128,11 @@ const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
     setArgs([...args, { name: "", type: ArgType.STRING, description: "" }]);
   };
 
-  const handleArgChange = (index: number, key: keyof typeof args[0], value: ArgType) => {
+  const handleArgChange = (
+    index: number,
+    key: keyof (typeof args)[0],
+    value: ArgType,
+  ) => {
     const updatedArgs = [...args];
     updatedArgs[index]![key] = value;
     setArgs(updatedArgs);
@@ -133,13 +142,64 @@ const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
     setArgs(args.filter((_, i) => i !== index));
   };
 
+
+
+  const handleTestArgChange = (index: number, value: string) => {
+    const updated = [...testArgs];
+    updated[index] = value;
+    setTestArgs(updated);
+  };
+
+  const handleTestMacroSecure = () => {
+    try {
+      setTestError(null);
+      setTestResult(null);
+  
+      const c = new Compartment({
+        Math: harden(Math),
+        Number: harden(Number),
+        parseInt: harden(parseInt),
+        parseFloat: harden(parseFloat),
+        console: harden(console),
+      });
+  
+      // Evaluate the code into a function
+      const func = c.evaluate(`(${code})`);
+  
+      if (typeof func === "function") {
+        // Parse each argument based on its type (simple parse)
+        const parsedArgs = testArgs.map((arg, i) => {
+          try {
+            return JSON.parse(arg); // Try to parse as JSON
+          } catch {
+            return arg; // Fallback to string
+          }
+        });
+  
+        const value = func(...parsedArgs);
+  
+        if (typeof value === "string" || typeof value === "number") {
+          setTestResult(String(value));
+        } else {
+          setTestResult("0");
+        }
+      } else {
+        setTestError("ERROR: Invalid macro function");
+      }
+    } catch (err: any) {
+      setTestError(err.message || "Unknown error");
+    }
+  };
+  
+  
+
   return (
     <form
       onSubmit={handleSubmit}
-      className="w-full space-y-4 rounded-md border bg-white p-4 shadow-lg"
+      className="w-full space-y-4 rounded-md border bg-white p-4 shadow-lg overflow-auto"
     >
       <h2 className="text-xl font-bold">
-        {macro ? "Edit Macro" : "Create New Macro"}
+        {macro ? "Edit Function" : "Create New Function"}
       </h2>
 
       <div>
@@ -174,7 +234,7 @@ const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
 
       <div>
         <label className="block text-sm font-medium text-gray-700">
-          Macro Code (JavaScript)
+          Function Code (JavaScript)
         </label>
         <textarea
           value={code}
@@ -200,13 +260,17 @@ const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
               type="text"
               placeholder="Arg Name"
               value={arg.name}
-              onChange={(e) => handleArgChange(index, "name", e.target.value as ArgType)}
+              onChange={(e) =>
+                handleArgChange(index, "name", e.target.value as ArgType)
+              }
               className="w-1/4 rounded-md border border-gray-300 p-2 focus:outline-none focus:ring-blue-500"
             />
             {/* Arg Type */}
             <select
               value={arg.type}
-              onChange={(e) => handleArgChange(index, "type", e.target.value as ArgType)}
+              onChange={(e) =>
+                handleArgChange(index, "type", e.target.value as ArgType)
+              }
               className="w-1/4 rounded-md border border-gray-300 p-2 focus:outline-none focus:ring-blue-500"
             >
               {Object.values(ArgType).map((type) => (
@@ -235,7 +299,14 @@ const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
             </Button>
           </div>
         ))}
-        <Button color="blue" onClick={(e)=>{e.preventDefault();handleAddArg()}} className="mt-2">
+        <Button
+          color="blue"
+          onClick={(e) => {
+            e.preventDefault();
+            handleAddArg();
+          }}
+          className="mt-2"
+        >
           Add Argument
         </Button>
       </div>
@@ -257,6 +328,52 @@ const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
         >
           Cancel
         </Button>
+        </div>
+        <div className="flex flex-col">
+
+        <h3 className="mt-4 text-lg font-medium text-gray-700">
+          Test Function
+        </h3>
+
+        <div className="space-y-2">
+          {args.map((arg, index) => (
+            <div key={index}>
+              <label className="block text-sm font-medium text-gray-600">
+                {arg.name || `Argument ${index + 1}`} ({arg.type})
+              </label>
+              <input
+                type="text"
+                placeholder={`Enter value for ${arg.name}`}
+                value={testArgs[index] ?? ""}
+                onChange={(e) => handleTestArgChange(index, e.target.value)}
+                className="w-full rounded-md border border-gray-300 p-2 focus:outline-none focus:ring-blue-500"
+              />
+            </div>
+          ))}
+
+          <Button
+            onClick={(e) => {
+              e.preventDefault();
+              handleTestMacroSecure();
+            }}
+            color="blue"
+          >
+            Run Test
+          </Button>
+
+          {testResult !== null && (
+            <div className="rounded-md border p-2 text-sm">
+              <strong>Result:</strong> {testResult}
+            </div>
+          )}
+
+          {testError && (
+            <div className="rounded-md border border-red-500 bg-red-100 p-2 text-sm text-red-700">
+              <strong>Error:</strong> {testError}
+            </div>
+          )}
+        
+        </div>
       </div>
     </form>
   );
