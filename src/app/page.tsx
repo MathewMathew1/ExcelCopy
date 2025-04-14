@@ -4,6 +4,7 @@ import {HydrateClient } from "~/trpc/server";
 import CreateWorkbookButton from "./components/CreateWorkBookButton";
 import UserWorkbooks from "./components/UserWorkbooks";
 import Link from "next/link";
+import LoginPageButton from "./components/MainPage/LoginPageButton"
 
 async function Home() {
   const session = await auth();
@@ -26,11 +27,9 @@ async function Home() {
           <p className="text-gray-600 mt-2 max-w-md">
             Excello is a powerful online spreadsheet tool inspired by Excel. Create, edit, and manage your workbooks effortlessly.
           </p>
-          <Link href="/login">
-            <button className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-              Log in to get started
-            </button>
-          </Link>
+         
+            <LoginPageButton/>
+   
         </div>
       )}
     </HydrateClient>
