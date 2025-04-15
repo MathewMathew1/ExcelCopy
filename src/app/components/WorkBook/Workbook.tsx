@@ -27,7 +27,8 @@ import { CONVERTED_TYPE_ARGS } from "~/types/Macro";
 import { LoadingSpinner } from "../LoadingSpinner";
 import type { CellData } from "~/types/Cell";
 import { LockdownManager } from "~/helpers/customFunctions";
-import { CellDataMemento, useCellDataMemento } from "~/contexts/useMementoCells";
+import type {CellDataMemento} from "~/contexts/useMementoCells";
+import { useCellDataMemento } from "~/contexts/useMementoCells";
 
 export interface SheetContextProps {
   currentSheet: SheetWithCells;

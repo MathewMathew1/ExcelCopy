@@ -3,7 +3,7 @@ import { auth } from "~/server/auth";
 import {HydrateClient } from "~/trpc/server";
 import CreateWorkbookButton from "./components/CreateWorkBookButton";
 import UserWorkbooks from "./components/UserWorkbooks";
-import Link from "next/link";
+
 import LoginPageButton from "./components/MainPage/LoginPageButton"
 
 async function Home() {

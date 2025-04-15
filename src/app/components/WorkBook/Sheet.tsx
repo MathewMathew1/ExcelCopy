@@ -412,11 +412,10 @@ const Sheet = () => {
     const listener = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key === "z"){ 
         const keys = workbook.cellDataMemento.undo();
-        console.log(keys)
+  
         keys?.forEach(key => {
           clearCache(key.CellKeyAbc, cellCache.current, cellDependencies.current);
         })
-        console.log(workbook.cellDataMemento.cellData)
         
       }
       if (e.ctrlKey && e.key === "y"){
@@ -430,7 +429,7 @@ const Sheet = () => {
     window.addEventListener("keydown", listener);
     
     return () => window.removeEventListener("keydown", listener);
-  }, [workbook.cellDataMemento.undo, workbook.cellDataMemento.redo]);
+  }, [workbook.cellDataMemento.undo, workbook.cellDataMemento.redo, workbook.cellDataMemento]);
 
   const handleSort = ({
     start,

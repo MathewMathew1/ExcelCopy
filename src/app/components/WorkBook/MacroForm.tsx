@@ -163,20 +163,11 @@ const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
         console: harden(console),
       });
   
-      // Evaluate the code into a function
-      const func = c.evaluate(`(${code})`);
+      const func = c.evaluate(`(${code})`) as unknown
   
       if (typeof func === "function") {
-        // Parse each argument based on its type (simple parse)
-        const parsedArgs = testArgs.map((arg, i) => {
-          try {
-            return JSON.parse(arg); // Try to parse as JSON
-          } catch {
-            return arg; // Fallback to string
-          }
-        });
-  
-        const value = func(...parsedArgs);
+ 
+        const value: unknown = (func as (...args: unknown[]) => unknown)(...args);
   
         if (typeof value === "string" || typeof value === "number") {
           setTestResult(String(value));
@@ -186,8 +177,8 @@ const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
       } else {
         setTestError("ERROR: Invalid macro function");
       }
-    } catch (err: any) {
-      setTestError(err.message || "Unknown error");
+    } catch{
+      setTestError("Unknown error");
     }
   };
   
