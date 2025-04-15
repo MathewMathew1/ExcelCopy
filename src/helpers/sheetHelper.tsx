@@ -192,7 +192,7 @@ export const parseCellReference = (cellRef: string) => {
   return { colNum, rowNum };
 };
 
-const getColumnLetter = (colNum: number): string => {
+export const getColumnLetter = (colNum: number): string => {
   colNum = colNum + 1
   let letter = "";
   while (colNum > 0) {

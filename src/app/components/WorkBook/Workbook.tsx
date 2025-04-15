@@ -27,12 +27,14 @@ import { CONVERTED_TYPE_ARGS } from "~/types/Macro";
 import { LoadingSpinner } from "../LoadingSpinner";
 import type { CellData } from "~/types/Cell";
 import { LockdownManager } from "~/helpers/customFunctions";
+import { CellDataMemento, useCellDataMemento } from "~/contexts/useMementoCells";
 
 export interface SheetContextProps {
   currentSheet: SheetWithCells;
   cells: Record<string, CellData | null>;
   sheets: SheetWithCells[];
   workbookName: string;
+  cellDataMemento: CellDataMemento
 }
 
 declare global {
@@ -95,6 +97,7 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
   const unsavedChangesRef = useRef<Record<string, boolean>>({});
   const saveTimers = useRef<Record<string, NodeJS.Timeout>>({});
   const [versionOfCharts, setVersionOfCharts] = useState(1);
+  const cellDataMemento = useCellDataMemento();
 
   const trpcUtils = api.useUtils();
 
@@ -283,7 +286,6 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
     },
   });
 
-  const [cellData, setCellData] = useState<Record<string, CellData | null>>({});
   const [currentSheetId, setCurrentSheetId] = useState<string | null>(null);
   const searchParams = useSearchParams();
 
@@ -341,7 +343,7 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
           };
         });
       });
-      setCellData(initialData);
+      cellDataMemento.setInitialData(initialData)
     }
   }, [workbook.id, workbook]);
 
@@ -437,7 +439,7 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
     }
 
     const newTimer = setTimeout(() => {
-      void handleAutoSave(currentSheetId, cellData);
+      void handleAutoSave(currentSheetId, cellDataMemento.cellData);
     }, 3000);
 
     saveTimers.current[currentSheetId] = newTimer;
@@ -445,7 +447,7 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
     return () => {
       clearTimeout(newTimer);
     };
-  }, [cellData, currentSheetId, updateSheet, workbook.sheets]);
+  }, [cellDataMemento.cellData, currentSheetId, updateSheet, workbook.sheets]);
 
   const handleCellChange = (
     sheetId: string,
@@ -453,37 +455,12 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
       | { rowNum: number; colNum: number; newValue: string | null }
       | { rowNum: number; colNum: number; newValue: string | null }[],
   ) => {
-    setCellData((prevData) => {
-      const newData = { ...prevData };
 
-      if (Array.isArray(changes)) {
-        changes.forEach(({ rowNum, colNum, newValue }) => {
-          const cellKey = `${sheetId}-${rowNum}-${colNum}`;
+    const enrichedChanges = Array.isArray(changes)
+    ? changes.map((c) => ({ ...c, sheetId }))
+    : { ...changes, sheetId };
 
-          if (newValue !== null) {
-            newData[cellKey] = {
-              value: newValue || "",
-              colNum,
-              rowNum,
-              sheetId: sheetId,
-            };
-          } else {
-            delete newData[cellKey];
-          }
-        });
-      } else {
-        const { rowNum, colNum, newValue } = changes;
-        const cellKey = `${sheetId}-${rowNum}-${colNum}`;
-        newData[cellKey] = {
-          value: newValue ?? "",
-          colNum,
-          rowNum,
-          sheetId: sheetId,
-        };
-      }
-
-      return newData;
-    });
+    cellDataMemento.updateCellData(enrichedChanges)
 
     unsavedChangesRef.current = {
       ...unsavedChangesRef.current,
@@ -528,8 +505,8 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
     if (!sheet) return;
 
     const updatedCells = [];
-    for (const key in cellData) {
-      const value = cellData[key];
+    for (const key in cellDataMemento.cellData) {
+      const value = cellDataMemento.cellData[key];
       if (!value || value.sheetId != sheetId) continue;
       const cell = { ...value, dataType: DataType.TEXT };
 
@@ -631,9 +608,10 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
           currentSheet:
             workbook.sheets.find((s) => s.id === currentSheetId) ??
             workbook.sheets[0]!,
-          cells: cellData,
+          cells: cellDataMemento.cellData,
           sheets: workbook?.sheets ?? [],
           workbookName: workbook.name,
+          cellDataMemento: cellDataMemento
         }}
       >
         <WorkBookUpdateContext.Provider

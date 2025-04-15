@@ -6,7 +6,7 @@ import React, {
   useState,
 } from "react";
 import { useSheet, useUpdateWorkBook } from "./Workbook";
-import { extractSelectedAreas, handleCellChange } from "~/helpers/sheetHelper";
+import { clearCache, extractSelectedAreas, handleCellChange } from "~/helpers/sheetHelper";
 import type { SelectedArea } from "./ColorfullStorage";
 import { updateFormulaForDraggedCell } from "~/helpers/formulaHelper";
 import SheetTabs from "./SheetTabs";
@@ -408,6 +408,30 @@ const Sheet = () => {
     }
   }, [currentCell]);
 
+  useEffect(() => {
+    const listener = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === "z"){ 
+        const keys = workbook.cellDataMemento.undo();
+        console.log(keys)
+        keys?.forEach(key => {
+          clearCache(key.CellKeyAbc, cellCache.current, cellDependencies.current);
+        })
+        console.log(workbook.cellDataMemento.cellData)
+        
+      }
+      if (e.ctrlKey && e.key === "y"){
+        const keys =workbook.cellDataMemento.redo();
+        keys?.forEach(key => {
+          clearCache(key.CellKeyAbc, cellCache.current, cellDependencies.current);
+        })
+      }
+    };
+
+    window.addEventListener("keydown", listener);
+    
+    return () => window.removeEventListener("keydown", listener);
+  }, [workbook.cellDataMemento.undo, workbook.cellDataMemento.redo]);
+
   const handleSort = ({
     start,
     end,
@@ -470,13 +494,10 @@ const Sheet = () => {
     }
   }, [chartData?.showChart, chartData]);
 
-  const handleKeyMovements = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    console.log(e.key);
-  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Prevent arrow keys from doing weird things while focused on inputs
+
       if (
         document.activeElement &&
         document.activeElement.tagName === "INPUT"
@@ -506,7 +527,7 @@ const Sheet = () => {
           return; // Don't do anything on other keys
       }
 
-      setCurrentCell({ ...currentCell, rowNum: newRow, colNum: newCol   });
+      setCurrentCell({ ...currentCell, rowNum: newRow, colNum: newCol });
       e.preventDefault();
     };
 
@@ -553,7 +574,6 @@ const Sheet = () => {
       >
         <div
           className="sheet relative flex h-full flex-col"
-          onKeyDown={(e) => handleKeyMovements(e)}
         >
           <SheetMenu />
           <div className="workbook-container flex flex-col">
