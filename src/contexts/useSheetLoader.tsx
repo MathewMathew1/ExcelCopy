@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef} from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import type { SheetWithCells } from "~/types/WorkBook";
 
@@ -11,15 +11,22 @@ export const useSheetLoader = (
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const createQueryString = (name: string, value: string) => {
-    if(!searchParams) return ""
+  const changes = useRef(false)
 
-    const params = new URLSearchParams(searchParams);
-    params.set(name, value);
-    return params.toString();
-  };
+  const createQueryString = useCallback(
+    (name: string, value: string) => {
+      // eslint-disable-next-line
+      const params = new URLSearchParams(searchParams!);
+      params.set(name, value);
+
+      return params.toString();
+    },
+    [searchParams],
+  );
 
   useEffect(() => {
+   
+
     if (!searchParams) return;
     const sheetFromUrl = workbookSheets.find(
       (sheet) => sheet.id === searchParams.get("sheet"),
@@ -30,13 +37,20 @@ export const useSheetLoader = (
     } else if (workbookSheets.length > 0) {
       const firstSheet = workbookSheets[0]!;
       setCurrentSheetId(firstSheet.id);
-      router.push(pathname + "?" + createQueryString("sheet", firstSheet.id));
+
+      const path = pathname + "?" + createQueryString("sheet", firstSheet.id)
+      window.history.pushState({}, "",path);
+
     }
-  }, [searchParams, workbookSheets]);
+  }, [searchParams, workbookSheets, pathname ]);
 
   useEffect(() => {
+
+
     if (currentSheetId) {
-      router.push(pathname + "?" + createQueryString("sheet", currentSheetId));
+      console.log(currentSheetId)
+      const path = pathname + "?" + createQueryString("sheet", currentSheetId)
+      window.history.pushState({}, "",path);
     }
-  }, [currentSheetId]);
+  }, [currentSheetId, searchParams]);
 };

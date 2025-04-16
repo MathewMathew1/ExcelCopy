@@ -9,6 +9,7 @@ import ToastContainer from "./components/ToastContainer";
 import ToastProvider from "~/contexts/useToast";
 import { UserDataProvider } from "~/contexts/useUser";
 
+
 export const metadata: Metadata = {
   title: "Excello",
   description: "Copy of Excel",
@@ -36,6 +37,7 @@ export default async function RootLayout({
                 <Navbar />
   
                 {children} 
+               
                 <ToastContainer />
               </UserDataProvider>
             </ToastProvider>
