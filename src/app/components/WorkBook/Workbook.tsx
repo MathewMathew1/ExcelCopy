@@ -27,7 +27,6 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
     renameSheetFunc,
     deleteSheetFunc,
     copySheetFunc,
-    updateSheet,
     setCurrentSheetId,
     currentSheetId,
     changeSheetSize,
