@@ -2,7 +2,7 @@ import type { SelectedArea } from "~/app/components/WorkBook/ColorfullStorage";
 import { predefinedColors } from "./colorsTriangle";
 import { FormulaFunctions } from "./formulasSheet";
 import type { Sheet} from "@prisma/client";
-import type { SheetContextProps, WorkBookUpdateContextProps } from "~/app/components/WorkBook/Workbook";
+import type { SheetContextProps, WorkBookUpdateContextProps } from "~/types/WorkBook";
 import { getColumnLabel } from "./column";
 import { evaluate } from "mathjs";
 

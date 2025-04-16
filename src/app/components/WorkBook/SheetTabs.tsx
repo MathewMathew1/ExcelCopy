@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { useSheet, useUpdateWorkBook } from "./Workbook";
+import { useSheet, useUpdateWorkBook } from "~/types/WorkBook"; 
 import SheetTabMenu from "./SheetTabMenu";
 
 export type ContextMenu = {

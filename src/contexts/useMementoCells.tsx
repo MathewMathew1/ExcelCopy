@@ -95,10 +95,12 @@ export function useCellDataMemento() {
   );
 
   const setInitialData = (cellData: Record<CellKey, CellData | null>) => {
+    
     setCellData(cellData);
   };
 
   const undo = useCallback(() => {
+
     const last = history.at(-1);
     if (!last) return;
 

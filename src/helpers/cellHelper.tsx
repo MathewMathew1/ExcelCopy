@@ -1,6 +1,4 @@
-import type {
-  SheetContextProps,
-} from "~/app/components/WorkBook/Workbook";
+import type { SheetContextProps } from "~/types/WorkBook";
 import { evaluateFormula } from "./sheetHelper";
 import type { Sheet } from "@prisma/client";
 import type { SheetWithCells } from "~/types/WorkBook";

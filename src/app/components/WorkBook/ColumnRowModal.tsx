@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Button from "../Button";
 import Modal from "../Modal";
-import { useSheet, useUpdateWorkBook } from "./Workbook";
+import { useSheet, useUpdateWorkBook } from "~/types/WorkBook"; 
 import { MAX_COLS, MAX_ROWS } from "~/helpers/constants";
 
 const ColumnRowModal = ({

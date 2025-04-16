@@ -1,4 +1,4 @@
-import { useUpdateWorkBook } from "./Workbook";
+import { useUpdateWorkBook } from "~/types/WorkBook"; 
 import Button from "../Button";
 import type { Macro } from "@prisma/client";
 

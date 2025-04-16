@@ -103,7 +103,6 @@ type Cell {
   rowNum   Int    
   colNum   Int    
   value    String? 
-  dataType DataType
 }
 
 model Chart {

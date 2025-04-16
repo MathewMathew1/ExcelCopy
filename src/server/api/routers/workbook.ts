@@ -1,4 +1,3 @@
-import { DataType } from "@prisma/client";
 import { z } from "zod";
 import {
   createTRPCRouter,
@@ -69,7 +68,6 @@ export const workbookRouter = createTRPCRouter({
             rowNum: z.number(),
             colNum: z.number(),
             value: z.string().nullable(),
-            dataType: z.nativeEnum(DataType),
           })
         ),
       })
@@ -80,7 +78,7 @@ export const workbookRouter = createTRPCRouter({
       return ctx.db.sheet.update({
         where: { id: sheetId },
         data: {
-          cells, // Directly update the entire array of cells
+          cells, 
         },
       });
     }),

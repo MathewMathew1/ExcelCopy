@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useSheet, useUpdateWorkBook } from "./Workbook";
+import { useSheet, useUpdateWorkBook } from "~/types/WorkBook"; 
 import { useCellContext } from "~/contexts/useCellContext";
 import ChartComponent from "./Charts/ChartComponent";
 import type { ChartBox } from "~/types/Chart";

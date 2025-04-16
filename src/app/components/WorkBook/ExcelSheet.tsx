@@ -6,7 +6,7 @@ import { getColumnLabel } from "~/helpers/column";
 import ColorfulCellStorage from "./ColorfullStorage";
 import { useCellContext } from "~/contexts/useCellContext";
 import ChartOverlay from "./ChartOverlay";
-import { useSheet } from "./Workbook";
+import { useSheet } from "~/types/WorkBook"; 
 import type { CurrentCell } from "~/types/Cell";
 
 const MIN_COLUMN_WIDTH = 80;
