@@ -1,7 +1,6 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useSheet, useUpdateWorkBook } from "~/types/WorkBook";
-import { extractSelectedAreas, handleCellChange } from "~/helpers/sheetHelper";
-import { updateFormulaForDraggedCell } from "~/helpers/formulaHelper";
+import { extractSelectedAreas} from "~/helpers/sheetHelper";
 import {
   evaluateCellValue,
   getCellIndexes,
@@ -9,42 +8,10 @@ import {
   parseCellReferenceWithSheet,
   findTargetSheet,
 } from "~/helpers/cellHelper";
-import { CellContext } from "~/contexts/useCellContext";
-import { CurrentCell } from "~/types/Cell";
-import { SelectedArea } from "../../ColorfullStorage";
+import type { CurrentCell } from "~/types/Cell";
+import type { SelectedArea } from "../../ColorfullStorage";
 import type { Chart } from "@prisma/client";
-import { EventManager } from "~/app/managers/EventManager";
-import { EventMap } from "~/app/managers/EventManager";
 import { getColumnLabel } from "~/helpers/column";
-
-interface CellState {
-  selectedAreas: SelectedArea[];
-  dragHandler: null | {
-    startRow: number;
-    startCol: number;
-    endRow: number;
-    endCol: number;
-  };
-  draggedFormula: null | {
-    startRow: number;
-    startCol: number;
-    endRow: number;
-    endCol: number;
-  };
-  currentCell: CurrentCell | null;
-  columnWidths: number[];
-  chartData: null | { showChart: boolean; chart: Chart | null };
-  dragging: {
-    start: { rowNum: number; colNum: number } | null;
-    end: { rowNum: number; colNum: number } | null;
-  };
-  isDraggingFormula: boolean;
-  computedCellData: Record<string, string | number>;
-  cellCache: React.MutableRefObject<Record<string, string | number>>;
-  cellDependencies: React.MutableRefObject<Record<string, Set<string>>>;
-}
-
-const eventManager = new EventManager<EventMap>();
 
 const useCellState = () => {
   const updateWorkBook = useUpdateWorkBook();

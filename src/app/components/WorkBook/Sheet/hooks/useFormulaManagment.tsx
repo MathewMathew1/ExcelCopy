@@ -1,11 +1,11 @@
-import { RefObject, useCallback, useEffect, useState } from "react";
-import { useUpdateWorkBook, useSheet, SheetWithCells } from "~/types/WorkBook";
+import { useEffect, useState } from "react";
+import type { RefObject } from "react";
+import { useUpdateWorkBook, useSheet} from "~/types/WorkBook";
 import { updateFormulaForDraggedCell } from "~/helpers/formulaHelper";
-import { getCellKey } from "~/helpers/cellHelper";
 import { getColumnLabel } from "~/helpers/column";
-import { CurrentCell } from "~/types/Cell";
+import type { CurrentCell } from "~/types/Cell";
 import { handleCellChange } from "~/helpers/sheetHelper";
-import { Dragging } from "~/types/Dragging";
+import type { Dragging } from "~/types/Dragging";
 
 type UseFormulaManagementProps = {
   currentCell: CurrentCell | null;

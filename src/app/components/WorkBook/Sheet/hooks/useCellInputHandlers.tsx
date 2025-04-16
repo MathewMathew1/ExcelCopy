@@ -1,19 +1,20 @@
-import { useCallback, RefObject } from "react";
+import { useCallback } from "react";
+import type {MutableRefObject, RefObject} from "react"
 import type { CurrentCell } from "~/types/Cell";
 import { handleCellChange } from "~/helpers/sheetHelper";
 import { useSheet, useUpdateWorkBook } from "~/types/WorkBook";
 import type { Dragging } from "~/types/Dragging";
 import { getColumnLabel } from "~/helpers/column";
-import { EventManager} from "~/app/managers/EventManager";
-import type { EventMap } from "~/app/managers/EventManager";
+import type { EventManager, EventMap} from "~/app/managers/EventManager";
+
 
 type CellInputHandlerProps = {
   currentCell: CurrentCell | null;
   setCurrentCell: React.Dispatch<React.SetStateAction<CurrentCell | null>>;
   mainInputRef: RefObject<HTMLInputElement>;
   dragging: Dragging;
-  cellCache: React.MutableRefObject<any>;
-  cellDependencies: React.MutableRefObject<any>;
+  cellCache: MutableRefObject<Record<string, string | number>>
+  cellDependencies: MutableRefObject<Record<string, Set<string>>>
   setCurrentCellFunc: (rowNum: number, colNum: number, setSelect?: boolean) => void
   eventManager: EventManager<EventMap>
   inputRef: RefObject<HTMLInputElement>;
