@@ -1,7 +1,6 @@
 import React from "react";
 import type { severityColors } from "~/types/Toast";
 
-
 interface ToastProps {
   variant: severityColors;
   message: string;
@@ -18,41 +17,36 @@ const Toast: React.FC<ToastProps> = ({
   return (
     <div
       style={{ bottom: `${bottom}px` }}
-      className={`fixed right-[2rem] w-[280px]`}
+      className="fixed right-8 w-[300px] animate-slide-up fade-in"
     >
       <div
-        className={`max-w-xs ${variant} rounded-md text-sm text-white shadow-lg`}
+        className={`flex items-center justify-between gap-3 rounded-lg px-4 py-3 shadow-lg ${variant} text-white`}
         role="alert"
       >
-        <div className="flex p-4">
-          {message}
-          <div className="ml-3">
-            <div className="relative">
-              <button
-                onClick={() => handleClose()}
-                type="button"
-                className="rounded-full  bg-black text-white hover:bg-gray-800"
-              >
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  ></path>
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
+        <span className="text-sm leading-snug">{message}</span>
+        <button
+          onClick={handleClose}
+          className="rounded-full p-1 hover:bg-white/10 transition"
+          aria-label="Close toast"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
       </div>
     </div>
   );
 };
 
 export default Toast;
+
