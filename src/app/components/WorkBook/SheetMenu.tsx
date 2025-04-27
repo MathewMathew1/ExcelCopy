@@ -1,4 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
+import {
+  FiFile,
+  FiSliders,
+  FiLayers,
+  FiZap,
+  FiPlusSquare,
+} from "react-icons/fi";
 import FileDropdown from "./FileDropdown";
 import ExtraDropdown from "./ExtraDropdown";
 import MacroCreateModel from "./MacroCreateModal";
@@ -16,17 +23,15 @@ const SheetMenu = () => {
   const [showResizeModal, setShowResizeModal] = useState(false);
   const [showCreateMacro, setShowCreateMacro] = useState(false);
   const [showMacroList, setShowMacroList] = useState(false);
-  const [initialMacroText, setInitialMacroText] = useState("")
+  const [initialMacroText, setInitialMacroText] = useState("");
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const workbook = useSheet();
   const cellContext = useCellContext();
-  const updateWorkBook = useUpdateWorkBook()
+  const updateWorkBook = useUpdateWorkBook();
 
-  const closeModal = () => {
-    setShowMacroModal(false);
-  };
+  const closeModal = () => setShowMacroModal(false);
 
   const toggleDropdown = (menu: string) => {
     setDropdownOpen((prev) => (prev === menu ? null : menu));
@@ -34,7 +39,7 @@ const SheetMenu = () => {
 
   const handleSave = () => {
     alert("File saved!");
-    setDropdownOpen(null); // Close dropdown
+    setDropdownOpen(null);
   };
 
   const handleSort = (sortAsc: boolean) => {
@@ -73,121 +78,171 @@ const SheetMenu = () => {
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target as Node)
       ) {
-        setDropdownOpen(null); // Close dropdown if click is outside
+        setDropdownOpen(null);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   useEffect(() => {
-    console.log(!updateWorkBook.isRecording && updateWorkBook.macroSteps.length > 0)
-    if(!updateWorkBook.isRecording && updateWorkBook.macroSteps.length > 0){
-      setInitialMacroText(updateWorkBook.macroSteps)
-      setShowCreateMacro(true)
+    if (!updateWorkBook.isRecording && updateWorkBook.macroSteps.length > 0) {
+      setInitialMacroText(updateWorkBook.macroSteps);
+      setShowCreateMacro(true);
     }
   }, [updateWorkBook.isRecording]);
 
   return (
-    <div className="menu-bar" ref={dropdownRef}>
-      <div className="menu-item" onClick={() => toggleDropdown("file")}>
-        File
-        {dropdownOpen === "file" && (
-          <FileDropdown
-            handleSave={handleSave}
-            setShowResizeModal={setShowResizeModal}
-          />
-        )}
-      </div>
-      <div className="menu-item" onClick={() => toggleDropdown("extra")}>
-        Extra
-        {dropdownOpen === "extra" ? (
-          <ExtraDropdown
-            setShowYourFunctions={setShowYourFunctionsModal}
-            setShowMacroModal={setShowMacroModal}
-          />
+    <div
+      className="flex items-center gap-6 rounded-lg bg-white p-4 shadow"
+      ref={dropdownRef}
+    >
+      {/* File */}
+      <div className="relative">
+        <button
+          onClick={() => toggleDropdown("file")}
+          className="flex items-center gap-2 font-semibold text-gray-700 transition hover:text-black"
+        >
+          <FiFile />
+          File
+        </button>
+        {dropdownOpen === "file" ? (
+          
+            <FileDropdown
+              handleSave={handleSave}
+              setShowResizeModal={setShowResizeModal}
+            />
+  
         ) : null}
       </div>
-      <div className="menu-item" onClick={() => toggleDropdown("view")}>
-        Sort
-        {dropdownOpen === "view" && (
-          <div className="dropdown">
-            <div className="dropdown-item" onClick={() => handleSort(true)}>
+
+      <div className="relative">
+        <button
+          onClick={() => toggleDropdown("extra")}
+          className="flex items-center gap-2 font-semibold text-gray-700 transition hover:text-black"
+        >
+          <FiLayers />
+          Extra
+        </button>
+        {dropdownOpen === "extra" ? (
+         
+            <ExtraDropdown
+              setShowYourFunctions={setShowYourFunctionsModal}
+              setShowMacroModal={setShowMacroModal}
+            />
+         
+        ) : null}
+      </div>
+
+      <div className="relative">
+        <button
+          onClick={() => toggleDropdown("view")}
+          className="flex items-center gap-2 font-semibold text-gray-700 transition hover:text-black"
+        >
+          <FiSliders />
+          Sort
+        </button>
+        {dropdownOpen === "view" ? (
+          <div className="absolute z-50 mt-2 w-40 rounded-lg border border-gray-200 bg-white shadow-lg">
+            <div
+              onClick={() => handleSort(true)}
+              className="cursor-pointer px-4 py-2 text-sm hover:bg-gray-100"
+            >
               Sort Asc
             </div>
-            <div onClick={() => handleSort(false)} className="dropdown-item">
+            <div
+              onClick={() => handleSort(false)}
+              className="cursor-pointer px-4 py-2 text-sm hover:bg-gray-100"
+            >
               Sort Desc
             </div>
           </div>
-        )}
+        ) : null}
       </div>
 
-      <div className="menu-item" onClick={() => toggleDropdown("macro")}>
-        Macro
-        {dropdownOpen === "macro" && (
-          <div className="dropdown">
+      <div className="relative">
+        <button
+          onClick={() => toggleDropdown("macro")}
+          className="flex items-center gap-2 font-semibold text-gray-700 transition hover:text-black"
+        >
+          <FiZap />
+          Macro
+        </button>
+        {dropdownOpen === "macro"? (
+          <div className="absolute z-50 mt-2 w-44 rounded-lg border border-gray-200 bg-white shadow-lg">
             <div
-              className="dropdown-item"
               onClick={() => setShowCreateMacro(true)}
+              className="cursor-pointer px-4 py-2 text-sm hover:bg-gray-100"
             >
               Create
             </div>
             <div
-              className="dropdown-item"
               onClick={() => setShowMacroList(true)}
+              className="cursor-pointer px-4 py-2 text-sm hover:bg-gray-100"
             >
               Your macros
             </div>
             {updateWorkBook.isRecording ? (
               <div
-                className="dropdown-item"
                 onClick={() => updateWorkBook.stopRecording()}
+                className="cursor-pointer px-4 py-2 text-sm hover:bg-gray-100"
               >
-                Stop recording
+                Stop Recording
               </div>
             ) : (
               <div
-                className="dropdown-item"
                 onClick={() => updateWorkBook.startRecording()}
+                className="cursor-pointer px-4 py-2 text-sm hover:bg-gray-100"
               >
                 Record
               </div>
             )}
           </div>
-        )}
+        ): null}
       </div>
-      <div className="menu-item" onClick={() => toggleDropdown("insert")}>
-        Insert
+
+      {/* Insert */}
+      <div className="relative">
+        <button
+          onClick={() => toggleDropdown("insert")}
+          className="flex items-center gap-2 font-semibold text-gray-700 transition hover:text-black"
+        >
+          <FiPlusSquare />
+          Insert
+        </button>
         {dropdownOpen === "insert" && (
-          <div className="dropdown">
+          <div className="absolute z-50 mt-2 w-40 rounded-lg border border-gray-200 bg-white shadow-lg">
             <div
-              className="dropdown-item"
               onClick={() =>
                 cellContext.setChartData({ showChart: true, chart: null })
               }
+              className="cursor-pointer px-4 py-2 text-sm hover:bg-gray-100"
             >
               Chart
             </div>
           </div>
         )}
       </div>
+
+      {/* Modals */}
       <MacroCreateModel showModal={showMacroModal} closeModal={closeModal} />
       <YourFunctions
         showModal={showYourFunctionsModal}
         closeModal={() => setShowYourFunctionsModal(false)}
       />
-      {showResizeModal ? (
+      {showResizeModal && (
         <ColumnRowModal closeResizeModal={() => setShowResizeModal(false)} />
-      ) : null}
-      {showCreateMacro ? (
-        <MacroEditor onCancel={() => {setInitialMacroText(""); setShowCreateMacro(false)}} initialText={initialMacroText}/>
-      ) : null}
-      {showMacroList ? (
-        <MacroList onExit={() => setShowMacroList(false)} />
-      ) : null}
+      )}
+      {showCreateMacro && (
+        <MacroEditor
+          onCancel={() => {
+            setInitialMacroText("");
+            setShowCreateMacro(false);
+          }}
+          initialText={initialMacroText}
+        />
+      )}
+      {showMacroList && <MacroList onExit={() => setShowMacroList(false)} />}
     </div>
   );
 };

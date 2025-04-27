@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { useSheet, useUpdateWorkBook } from "~/types/WorkBook"; 
+import { useSheet, useUpdateWorkBook } from "~/types/WorkBook";
 import SheetTabMenu from "./SheetTabMenu";
 
 export type ContextMenu = {
@@ -53,7 +53,7 @@ const SheetTabs = () => {
 
   return (
     <div className="relative bottom-0 left-0 right-0 flex items-center border-t border-gray-300 bg-gray-100 p-2">
-      <div className="flex space-x-2 overflow-x-auto">
+      <div className="flex space-x-2 overflow-x-auto overflow-y-hidden whitespace-nowrap">
         {sheets?.map((sheet) => (
           <React.Fragment key={sheet.id}>
             {renamingSheetId === sheet.id ? (
@@ -68,14 +68,14 @@ const SheetTabs = () => {
                   if (e.key === "Escape") setRenamingSheetId(null);
                 }}
                 autoFocus
-                className="rounded-md border px-2 py-1 outline-none"
+                className="flex-shrink-0 rounded-md border px-2 py-1 outline-none"
               />
             ) : (
               <button
                 key={`${sheet.id} button`}
                 onContextMenu={(e) => handleContextMenu(e, sheet.id)}
                 onMouseDown={(e) => handleSelectionTab(e, sheet.id)}
-                className={`rounded-md border px-4 py-2 ${
+                className={`flex-shrink-0 rounded-md border px-4 py-2 ${
                   workbook.currentSheet.id === sheet.id
                     ? "bg-blue-500 text-white"
                     : "bg-white"
@@ -89,14 +89,14 @@ const SheetTabs = () => {
 
         {/* Input field for new sheet */}
         {isAdding ? (
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-shrink-0 items-center space-x-2">
             <input
               ref={inputRef}
               type="text"
               value={newSheetName}
               onChange={(e) => setNewSheetName(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") void  handleCreateSheet();
+                if (e.key === "Enter") void handleCreateSheet();
                 if (e.key === "Escape") setIsAdding(false);
               }}
               autoFocus
@@ -119,19 +119,20 @@ const SheetTabs = () => {
         ) : (
           <button
             onClick={() => setIsAdding(true)}
-            className="ml-4 rounded-md border bg-green-500 px-3 py-2 text-white"
+            className="ml-4 flex-shrink-0 rounded-md border bg-green-500 px-3 py-2 text-white"
           >
             ＋
           </button>
         )}
-        {contextMenu ? (
+
+        {contextMenu && (
           <SheetTabMenu
             setRenameValue={setRenameValue}
             setRenamingSheetId={setRenamingSheetId}
             contextMenu={contextMenu}
             setContextMenu={setContextMenu}
-          ></SheetTabMenu>
-        ) : null}
+          />
+        )}
       </div>
     </div>
   );

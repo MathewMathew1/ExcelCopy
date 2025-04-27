@@ -13,14 +13,14 @@ const FileDropdown: React.FC<FileDropdownProps> = ({setShowResizeModal}) => {
 
 
   return (
-    <div className="dropdown">
-      <div className="dropdown-item" onClick={()=>updateWorkBook.handleUpdateSheet(sheet.currentSheet.id)}>
+    <div className="absolute z-50 mt-2 w-44 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
+      <div className="cursor-pointer px-4 py-2 text-sm hover:bg-gray-100" onClick={()=>updateWorkBook.handleUpdateSheet(sheet.currentSheet.id)}>
         Save
       </div>
-      <div className="dropdown-item" onClick={()=>updateWorkBook.saveAll()}>
+      <div className="cursor-pointer px-4 py-2 text-sm hover:bg-gray-100" onClick={()=>updateWorkBook.saveAll()}>
         Save All
       </div>
-      <div className="dropdown-item" onClick={()=>setShowResizeModal(true)}>
+      <div className="cursor-pointer px-4 py-2 text-sm hover:bg-gray-100" onClick={()=>setShowResizeModal(true)}>
         Change Size
       </div>
     
