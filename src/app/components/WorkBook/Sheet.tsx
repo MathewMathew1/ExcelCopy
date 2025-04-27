@@ -20,7 +20,7 @@ const eventManager = new EventManager<EventMap>();
 
 const Sheet = () => {
   const workbook = useSheet();
-  const updateWorkBook = useUpdateWorkBook()
+  const updateWorkBook = useUpdateWorkBook();
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const mainInputRef = useRef<HTMLInputElement | null>(null);
@@ -40,7 +40,7 @@ const Sheet = () => {
     cellDependencies,
     saveChangesInChart,
     handleDoubleClick,
-    saveChangeInCell
+    saveChangeInCell,
   } = useCellState();
   const { handleSort } = useSortHandler({
     computedCellData,
@@ -48,8 +48,12 @@ const Sheet = () => {
     cellDependencies,
   });
 
-  
-  const sheetActions = useSheetActions({handleSort, addMacroStep: updateWorkBook.addMacroStep, saveChangesInChart, saveChangeInCell})
+  const sheetActions = useSheetActions({
+    handleSort,
+    addMacroStep: updateWorkBook.addMacroStep,
+    saveChangesInChart,
+    saveChangeInCell,
+  });
 
   const {
     draggedFormula,
@@ -68,7 +72,7 @@ const Sheet = () => {
     currentCell,
     inputRef,
     mainInputRef,
-    ...sheetActions
+    ...sheetActions,
   });
 
   useKeyboardNavigation({
@@ -95,10 +99,8 @@ const Sheet = () => {
     eventManager,
     inputRef,
     setCurrentCellFunc,
-    ...sheetActions
+    ...sheetActions,
   });
-
-
 
   const sheet = workbook.currentSheet;
 
@@ -149,8 +151,14 @@ const Sheet = () => {
         <div className="sheet relative flex h-full flex-col">
           <SheetMenu />
           <div className="workbook-container flex flex-col">
-            <h1>{workbook?.workbookName}</h1>
-            <h2>{sheet.name}</h2>
+            <div className="mb-6 rounded-lg bg-white p-1 shadow">
+              <h1 className="mb-2 text-3xl font-extrabold text-gray-900">
+                📒 {workbook?.workbookName || "No Workbook Selected"}
+              </h1>
+              <h2 className="text-xl font-medium text-gray-700">
+                🗂️ {sheet?.name || "No Sheet Selected"}
+              </h2>
+            </div>
             <SuggestionFormulaList
               value={currentCell ? currentCell.value : ""}
               onChange={handleInputChange}

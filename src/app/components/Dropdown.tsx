@@ -33,16 +33,16 @@ const UserDropdown = () => {
 
       {open && (
         <div
-          ref={dropdownRef}
-          className="absolute z-[100] right-0 top-[40px] mt-2 w-40 rounded-lg border border-gray-200 bg-white shadow-lg text-black"
+        ref={dropdownRef}
+        className="absolute z-50 right-0 top-8 mt-2 w-44 rounded-xl border border-gray-200 bg-white shadow-xl overflow-hidden"
+      >
+        <button
+          onClick={() => void signOut()}
+          className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-100 transition"
         >
-          <button
-            onClick={() => void signOut()}
-            className="block w-full px-4 py-2 text-left hover:bg-gray-100"
-          >
-            Logout
-          </button>
-        </div>
+          Logout
+        </button>
+      </div>
       )}
     </div>
   );
