@@ -1,25 +1,25 @@
 import React, { useState, useEffect } from "react";
 import { api } from "~/trpc/react";
-import type { CustomFunction, Macro } from "@prisma/client";
+import type { CustomFunction } from "@prisma/client";
 import { useUpdateToast } from "~/contexts/useToast";
 import { severityColors } from "~/types/Toast";
 import Button from "../Button";
 import { ArgType } from "@prisma/client";
 
-interface MacroFormProps {
-  macro?: CustomFunction | null;
+interface customFunctionFormProps {
+  customFunction?: CustomFunction | null;
   onSuccess?: () => void;
   close: () => void;
 }
 
-const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
-  const [name, setName] = useState(macro?.name ?? "");
-  const [description, setDescription] = useState(macro?.description ?? "");
-  const [code, setCode] = useState(macro?.code ?? "");
+const customFunctionForm: React.FC<customFunctionFormProps> = ({ customFunction, onSuccess, close }) => {
+  const [name, setName] = useState(customFunction?.name ?? "");
+  const [description, setDescription] = useState(customFunction?.description ?? "");
+  const [code, setCode] = useState(customFunction?.code ?? "");
   const [errors, setErrors] = useState<{ name?: string; code?: string }>({});
   const [args, setArgs] = useState<
     { name: string; type: ArgType; description: string }[]
-  >(macro?.args ?? []);
+  >(customFunction?.args ?? []);
   const [testArgs, setTestArgs] = useState<string[]>([]);
   const [testResult, setTestResult] = useState<string | null>(null);
   const [testError, setTestError] = useState<string | null>(null);
@@ -29,18 +29,18 @@ const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
   const updateToast = useUpdateToast();
 
   useEffect(() => {
-    if (macro) {
-      setName(macro.name);
-      setDescription(macro.description ?? "");
-      setCode(macro.code);
+    if (customFunction) {
+      setName(customFunction.name);
+      setDescription(customFunction.description ?? "");
+      setCode(customFunction.code);
     } else {
       setName("");
       setDescription("");
       setCode("");
     }
-  }, [macro]);
+  }, [customFunction]);
 
-  const createMacro = api.customFunction.create.useMutation({
+  const createCustomFunction = api.customFunction.create.useMutation({
     onSuccess: (data) => {
       updateToast.addToast({
         toastText: "created function successfully",
@@ -68,8 +68,8 @@ const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
     },
   });
 
-  // Edit Macro Mutation
-  const updateMacro = api.customFunction.edit.useMutation({
+  // Edit customFunction Mutation
+  const updatecustomFunction = api.customFunction.edit.useMutation({
     onSuccess: (data) => {
       updateToast.addToast({
         toastText: "updated function successfully",
@@ -83,7 +83,7 @@ const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
         return {
           ...oldData,
           customFunctions: [
-            ...oldData.customFunctions.filter((macro) => macro.id !== data.id),
+            ...oldData.customFunctions.filter((customFunction) => customFunction.id !== data.id),
             data,
           ],
         };
@@ -109,18 +109,18 @@ const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
     e.preventDefault();
 
     const newErrors: { name?: string; code?: string } = {};
-    if (name.trim() === "") newErrors.name = "Macro name is required.";
-    if (code.trim() === "") newErrors.code = "Macro code is required.";
+    if (name.trim() === "") newErrors.name = "customFunction name is required.";
+    if (code.trim() === "") newErrors.code = "customFunction code is required.";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
 
-    if (macro) {
-      updateMacro.mutate({ id: macro.id, name, description, code, args });
+    if (customFunction) {
+      updatecustomFunction.mutate({ id: customFunction.id, name, description, code, args });
     } else {
-      createMacro.mutate({ name, description, code, args });
+      createCustomFunction.mutate({ name, description, code, args });
     }
   };
 
@@ -150,7 +150,7 @@ const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
     setTestArgs(updated);
   };
 
-  const handleTestMacroSecure = () => {
+  const handleTestcustomFunctionSecure = () => {
     try {
       setTestError(null);
       setTestResult(null);
@@ -175,7 +175,7 @@ const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
           setTestResult("0");
         }
       } else {
-        setTestError("ERROR: Invalid macro function");
+        setTestError("ERROR: Invalid customFunction function");
       }
     } catch{
       setTestError("Unknown error");
@@ -190,12 +190,12 @@ const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
       className="w-full space-y-4 rounded-md border bg-white p-4 shadow-lg overflow-auto"
     >
       <h2 className="text-xl font-bold">
-        {macro ? "Edit Function" : "Create New Function"}
+        {customFunction ? "Edit Function" : "Create New Function"}
       </h2>
 
       <div>
         <label className="block text-sm font-medium text-gray-700">
-          Macro Name
+          customFunction Name
         </label>
         <input
           type="text"
@@ -231,7 +231,7 @@ const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
           value={code}
           onChange={(e) => setCode(e.target.value)}
           rows={6}
-          placeholder={`function customMacro(cellData) {\n  return cellData * 2;\n}`}
+          placeholder={`function customcustomFunction(cellData) {\n  return cellData * 2;\n}`}
           className={`w-full rounded-md border p-2 font-mono focus:outline-none focus:ring-2 ${
             errors.code
               ? "border-red-500 focus:ring-red-500"
@@ -306,9 +306,9 @@ const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
           color="green"
           type="submit"
           className="rounded-md p-2 text-white disabled:bg-gray-400"
-          disabled={createMacro.isPending || updateMacro.isPending}
+          disabled={createCustomFunction.isPending || updatecustomFunction.isPending}
         >
-          {macro ? "Update Macro" : "Create Macro"}
+          {customFunction ? "Update customFunction" : "Create customFunction"}
         </Button>
         <Button
           color="blue"
@@ -345,7 +345,7 @@ const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
           <Button
             onClick={(e) => {
               e.preventDefault();
-              handleTestMacroSecure();
+              handleTestcustomFunctionSecure();
             }}
             color="blue"
           >
@@ -370,4 +370,4 @@ const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
   );
 };
 
-export default MacroForm;
+export default customFunctionForm;

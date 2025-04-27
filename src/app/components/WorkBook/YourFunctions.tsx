@@ -88,7 +88,7 @@ const YourFunctions = ({
             <div className="absolute z-[500] w-[600px]">
               <MacroForm
                 close={handleCloseEditMacroInfo}
-                macro={editMacroInfo}
+                customFunction={editMacroInfo}
               />
             </div>
           ) : null}
