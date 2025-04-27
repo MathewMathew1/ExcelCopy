@@ -66,6 +66,7 @@ model User {
     posts         Post[]
     workbooks          Workbook[]
     macros          Macro[]
+    customFunctions          CustomFunction[]
 }
 
 model VerificationToken {
@@ -147,20 +148,20 @@ enum DataType {
 }
 
 
-model Macro {
+model CustomFunction {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   name        String
   description String?
   code        String
-  args        MacroArg[]   // Storing an array of embedded objects
+  args        CustomFunctionArg[]  
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   createdById String       @db.ObjectId
   createdBy   User         @relation(fields: [createdById], references: [id])
 }
 
-// Embedded type for arguments
-type MacroArg {
+
+type CustomFunctionArg {
   name        String
   type        ArgType
   description String
@@ -171,4 +172,17 @@ enum ArgType {
   NUMBER 
   BOOLEAN 
   DATE
+}
+
+model Macro {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name String 
+  text      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  authorId  String       @db.ObjectId
+  Author   User         @relation(fields: [authorId], references: [id])
+  shortcut  String? 
+
+  @@unique([authorId, name])
 }

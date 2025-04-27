@@ -18,15 +18,15 @@ const Modal = ({ children, onClose }: { children: React.ReactNode, onClose: () =
 
   return (
     <div
-      className="relative z-[6000]"
+      className="absolute z-[1200]"
       aria-labelledby="modal-title"
       role="dialog"
       aria-modal="true" 
     >
       <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
-      <div className="fixed inset-0  z-10 w-screen overflow-y-auto">
+      <div className="fixed inset-0  w-screen overflow-y-auto">
         <div className="flex  min-h-full  items-end justify-center text-center sm:items-center sm:p-0">
-          <div ref={modalRef} className="max-h-[100vh] overflow-visible flex relative transform overflow-hidden rounded-lg bg-[#333537] text-left shadow-xl transition-all sm:w-full sm:max-w-lg">
+          <div ref={modalRef} className="z-[150] max-h-[100vh] flex relative transform overflow-hidden rounded-lg bg-[#333537] text-left shadow-xl transition-all sm:w-full sm:max-w-lg ">
             {children}
           </div>
         </div>

@@ -4,22 +4,27 @@ import ExtraDropdown from "./ExtraDropdown";
 import MacroCreateModel from "./MacroCreateModal";
 import YourFunctions from "./YourFunctions";
 import ColumnRowModal from "./ColumnRowModal";
-import { useSheet } from "~/types/WorkBook"; 
+import { useSheet, useUpdateWorkBook } from "~/types/WorkBook";
 import { useCellContext } from "~/contexts/useCellContext";
+import MacroEditor from "./Macro/CreateMacro";
+import MacroList from "./Macro/ListOfMacros";
 
 const SheetMenu = () => {
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
   const [showMacroModal, setShowMacroModal] = useState(false);
   const [showYourFunctionsModal, setShowYourFunctionsModal] = useState(false);
   const [showResizeModal, setShowResizeModal] = useState(false);
+  const [showCreateMacro, setShowCreateMacro] = useState(false);
+  const [showMacroList, setShowMacroList] = useState(false);
+  const [initialMacroText, setInitialMacroText] = useState("")
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const workbook = useSheet();
   const cellContext = useCellContext();
+  const updateWorkBook = useUpdateWorkBook()
 
   const closeModal = () => {
-    console.log("hhh");
     setShowMacroModal(false);
   };
 
@@ -34,7 +39,10 @@ const SheetMenu = () => {
 
   const handleSort = (sortAsc: boolean) => {
     const selectedArea = cellContext.selectedAreas[0];
-    if (!selectedArea || cellContext.currentCell?.isCurrentlySelected === true) {
+    if (
+      !selectedArea ||
+      cellContext.currentCell?.isCurrentlySelected === true
+    ) {
       return;
     }
 
@@ -47,21 +55,24 @@ const SheetMenu = () => {
       ? startArea
       : {
           row: selectedArea.start.rowNum + selectedArea.area.sizeY - 2,
-          col: selectedArea.start.colNum + selectedArea.area.sizeX - 2, 
+          col: selectedArea.start.colNum + selectedArea.area.sizeX - 2,
         };
-        
+
     cellContext.handleSort({
       sortAscending: sortAsc,
       sheetId: workbook.currentSheet.id,
       start: startArea,
-      end: endArea
+      end: endArea,
     });
     setDropdownOpen(null);
   };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setDropdownOpen(null); // Close dropdown if click is outside
       }
     };
@@ -72,6 +83,13 @@ const SheetMenu = () => {
     };
   }, []);
 
+  useEffect(() => {
+    console.log(!updateWorkBook.isRecording && updateWorkBook.macroSteps.length > 0)
+    if(!updateWorkBook.isRecording && updateWorkBook.macroSteps.length > 0){
+      setInitialMacroText(updateWorkBook.macroSteps)
+      setShowCreateMacro(true)
+    }
+  }, [updateWorkBook.isRecording]);
 
   return (
     <div className="menu-bar" ref={dropdownRef}>
@@ -100,7 +118,44 @@ const SheetMenu = () => {
             <div className="dropdown-item" onClick={() => handleSort(true)}>
               Sort Asc
             </div>
-            <div onClick={() => handleSort(false)} className="dropdown-item">Sort Desc</div>
+            <div onClick={() => handleSort(false)} className="dropdown-item">
+              Sort Desc
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="menu-item" onClick={() => toggleDropdown("macro")}>
+        Macro
+        {dropdownOpen === "macro" && (
+          <div className="dropdown">
+            <div
+              className="dropdown-item"
+              onClick={() => setShowCreateMacro(true)}
+            >
+              Create
+            </div>
+            <div
+              className="dropdown-item"
+              onClick={() => setShowMacroList(true)}
+            >
+              Your macros
+            </div>
+            {updateWorkBook.isRecording ? (
+              <div
+                className="dropdown-item"
+                onClick={() => updateWorkBook.stopRecording()}
+              >
+                Stop recording
+              </div>
+            ) : (
+              <div
+                className="dropdown-item"
+                onClick={() => updateWorkBook.startRecording()}
+              >
+                Record
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -108,7 +163,12 @@ const SheetMenu = () => {
         Insert
         {dropdownOpen === "insert" && (
           <div className="dropdown">
-            <div className="dropdown-item" onClick={() => cellContext.setChartData({showChart: true, chart: null})}>
+            <div
+              className="dropdown-item"
+              onClick={() =>
+                cellContext.setChartData({ showChart: true, chart: null })
+              }
+            >
               Chart
             </div>
           </div>
@@ -121,6 +181,12 @@ const SheetMenu = () => {
       />
       {showResizeModal ? (
         <ColumnRowModal closeResizeModal={() => setShowResizeModal(false)} />
+      ) : null}
+      {showCreateMacro ? (
+        <MacroEditor onCancel={() => {setInitialMacroText(""); setShowCreateMacro(false)}} initialText={initialMacroText}/>
+      ) : null}
+      {showMacroList ? (
+        <MacroList onExit={() => setShowMacroList(false)} />
       ) : null}
     </div>
   );

@@ -1,78 +1,90 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { MacroArgSchema } from "~/types/Macro";
+
+// Custom Zod validator for shortcut: must be either undefined or exactly 1 letter (a-z or A-Z)
+const shortcutSchema = z
+  .string()
+  .max(1, "Shortcut must be exactly one character")
+  .regex(/^[a-zA-Z]$/, "Shortcut must be a letter (A-Z)")
+  .optional();
 
 export const macroRouter = createTRPCRouter({
   create: protectedProcedure
     .input(
       z.object({
-        name: z.string().min(1),
-        description: z.string().optional(),
-        code: z.string().min(1),
-        args: z.array(MacroArgSchema)
-      })
+        name: z.string().min(1, "Macro name is required"),
+        text: z.string().min(1, "Macro text is required"),
+        shortcut: shortcutSchema,
+      }),
     )
     .mutation(async ({ input, ctx }) => {
-      const macro = await ctx.db.macro.create({
-        data: {
-          name: input.name,
-          description: input.description,
-          code: input.code,
-          createdById: ctx.session.user.id,
-          args: input.args
-        },
-      });
-      return macro;
-    }),
-    getAll: protectedProcedure.query(async ({ctx}) => {
+      const { name, text, shortcut } = input;
       const user = ctx.session.user;
-      return await ctx.db.macro.findMany({
-        where: {createdById: user.id},
-        orderBy: { createdAt: "desc" },
-      });
-    }),
-    delete: protectedProcedure
-    .input(
-      z.object({
-        id: z.string()
-      })
-    )
-    .mutation(async ({ input, ctx }) => {
-      const user = ctx.session.user
-      const macro = await ctx.db.macro.delete({
-        where: {
-          id: input.id,
-          createdById: user.id
-        },
-      });
 
-      if(!macro) throw new Error("Unauthorized or macro not found");
-
-      return macro.id
-    }),
-    edit: protectedProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        name: z.string().min(1),
-        description: z.string().optional(),
-        code: z.string().min(1),
-        args: z.array(MacroArgSchema)
-      })
-    )
-    .mutation(async ({ input, ctx }) => {
-      const macro = await ctx.db.macro.update({
-        where: {id: input.id, createdById: ctx.session.user.id},
+      const newMacro = await ctx.db.macro.create({
         data: {
-          name: input.name,
-          description: input.description,
-          code: input.code,
-          args: input.args
+          name,
+          text,
+          shortcut,
+          authorId: user.id,
         },
       });
 
-      if(!macro) throw new Error("Unauthorized or macro not found");
-      
-      return macro;
+      return newMacro;
+    }),
+
+  update: protectedProcedure
+    .input(
+      z.object({
+        macroId: z.string(),
+        name: z.string().min(1, "Macro name is required"),
+        text: z.string().min(1, "Macro text is required"),
+        shortcut: shortcutSchema,
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { macroId, name, text, shortcut } = input;
+      const user = ctx.session.user;
+
+      const macro = await ctx.db.macro.findFirst({
+        where: { id: macroId, authorId: user.id },
+      });
+
+      if (!macro) throw new Error("Unauthorized or macro not found");
+
+      const updatedMacro = await ctx.db.macro.update({
+        where: { id: macroId },
+        data: {
+          name,
+          text,
+          shortcut,
+        },
+      });
+
+      return updatedMacro;
+    }),
+
+  delete: protectedProcedure
+    .input(
+      z.object({
+        macroId: z.string(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { macroId } = input;
+      const user = ctx.session.user;
+
+      const macro = await ctx.db.macro.findFirst({
+        where: { id: macroId, authorId: user.id },
+      });
+
+      if (!macro) throw new Error("Unauthorized or macro not found");
+
+      await ctx.db.macro.delete({
+        where: { id: macroId },
+      });
+
+      return { macroId };
     }),
 });
+

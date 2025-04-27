@@ -4,7 +4,7 @@ import { useUpdateWorkBook, useSheet} from "~/types/WorkBook";
 import { updateFormulaForDraggedCell } from "~/helpers/formulaHelper";
 import { getColumnLabel } from "~/helpers/column";
 import type { CurrentCell } from "~/types/Cell";
-import { handleCellChange } from "~/helpers/sheetHelper";
+
 import type { Dragging } from "~/types/Dragging";
 
 type UseFormulaManagementProps = {
@@ -13,6 +13,7 @@ type UseFormulaManagementProps = {
   cellDependencies: React.MutableRefObject<Record<string, Set<string>>>;
   mainInputRef: RefObject<HTMLInputElement>;
   inputRef: RefObject<HTMLInputElement>;
+  saveChangeInCell: (rowNum: number, colNum: number, newValue: string) => void
 };
 
 const useFormulaManagement = ({
@@ -20,7 +21,8 @@ const useFormulaManagement = ({
   cellCache,
   cellDependencies,
   inputRef,
-  mainInputRef
+  mainInputRef,
+  saveChangeInCell
 }: UseFormulaManagementProps) => {
   const updateWorkBook = useUpdateWorkBook();
   const workbook = useSheet();
@@ -69,7 +71,7 @@ const useFormulaManagement = ({
             if (targetRowPos > targetRow || targetColPos > targetCol) continue;
 
             const cellKey = `${sheet.id}-${row}-${col}`;
-            const currentValue = workbook.cells[cellKey] ?? "";
+            const currentValue = workbook.cells[sheet.id]![cellKey] ?? "";
 
             if (!currentValue) continue;
 
@@ -81,16 +83,10 @@ const useFormulaManagement = ({
               currentValue.value,
             );
 
-            handleCellChange(
-              sheet.id,
-              {
-                rowNum: targetRowPos,
-                colNum: targetColPos,
-                newValue: updatedFormula,
-              },
-              updateWorkBook,
-              cellCache.current,
-              cellDependencies.current,
+            saveChangeInCell(
+                targetRowPos,
+                targetColPos,
+                updatedFormula,
             );
 
             console.log(

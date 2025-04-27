@@ -110,6 +110,7 @@ export type CellContextProps = {
     chart: Chart | null;
   } | null;
   eventManager: EventManager<EventMap>
+  runMacroScript: (macroScript: string) => void
 };
 
 export type CellData = {

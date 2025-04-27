@@ -4,10 +4,15 @@ import { severityColors } from "~/types/Toast";
 import { useUpdateToast } from "~/contexts/useToast";
 import type { SheetWithCells } from "~/types/WorkBook";
 import { useState } from "react";
+import type { CellData, CellDataMemento } from "./useMementoCells";
 
-export const useSheetMutations = (workbook: { sheets: SheetWithCells[] }, idOfProject: string) => {
+export const useSheetMutations = (
+  workbook: { sheets: SheetWithCells[] },
+  idOfProject: string,
+  cellDataMemento: CellDataMemento,
+) => {
   const updateToast = useUpdateToast();
-    const [currentSheetId, setCurrentSheetId] = useState<string | null>(null);
+  const [currentSheetId, setCurrentSheetId] = useState<string | null>(null);
 
   const createSheetMutation = api.sheet.create.useMutation({
     onSuccess: (data) => {
@@ -94,6 +99,18 @@ export const useSheetMutations = (workbook: { sheets: SheetWithCells[] }, idOfPr
       });
 
       workbook.sheets = [...workbook.sheets, newSheet];
+      const data: Record<string, CellData | null> = {};
+      newSheet.cells.forEach((cell) => {
+        const key = `${newSheet.id}-${cell.rowNum}-${cell.colNum}`;
+        data[key] = {
+          value: cell.value ?? "",
+          colNum: cell.colNum,
+          rowNum: cell.rowNum,
+          sheetId: newSheet.id,
+        };
+      });
+
+      cellDataMemento.addNewSheet(data, newSheet.id);
     },
     onError: () => {
       updateToast.addToast({
@@ -138,33 +155,31 @@ export const useSheetMutations = (workbook: { sheets: SheetWithCells[] }, idOfPr
     }
   };
 
-  
-    const deleteSheetFunc = async (sheetId: string) => {
-      await deleteSheet.mutateAsync({
+  const deleteSheetFunc = async (sheetId: string) => {
+    await deleteSheet.mutateAsync({
+      sheetId,
+      workbookId: idOfProject,
+    });
+  };
+
+  const copySheetFunc = async (sheetId: string) => {
+    try {
+      const newSheet = await copySheet.mutateAsync({
         sheetId,
         workbookId: idOfProject,
       });
-    };
-  
-    const copySheetFunc = async (sheetId: string) => {
-      try {
-        const newSheet = await copySheet.mutateAsync({
-          sheetId,
-          workbookId: idOfProject,
-        });
-        setCurrentSheetId(newSheet.id);
-      } catch (error) {
-        console.error("Failed to copy sheet:", error);
-      }
-    };
-  
-    const renameSheetFunc = async (sheetId: string, sheetName: string) => {
-      await renameSheet.mutateAsync({
-        newName: sheetName,
-        sheetId,
-      });
-    };
-  
+      setCurrentSheetId(newSheet.id);
+    } catch (error) {
+      console.error("Failed to copy sheet:", error);
+    }
+  };
+
+  const renameSheetFunc = async (sheetId: string, sheetName: string) => {
+    await renameSheet.mutateAsync({
+      newName: sheetName,
+      sheetId,
+    });
+  };
 
   return {
     createSheetMutation,
@@ -173,12 +188,12 @@ export const useSheetMutations = (workbook: { sheets: SheetWithCells[] }, idOfPr
     copySheet,
     updateSheetSize,
     updateSheet,
-    changeSheetSize, 
+    changeSheetSize,
     createSheet,
     currentSheetId,
     setCurrentSheetId,
     deleteSheetFunc,
     copySheetFunc,
-    renameSheetFunc
+    renameSheetFunc,
   };
 };

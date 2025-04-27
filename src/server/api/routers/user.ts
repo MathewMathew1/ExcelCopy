@@ -10,6 +10,7 @@ export const userRouter = createTRPCRouter({
         name: true,
         macros: true,
         workbooks: true,
+        customFunctions: true
       },
     });
     return userInfo;

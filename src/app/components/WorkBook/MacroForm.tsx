@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { api } from "~/trpc/react";
-import type { Macro } from "@prisma/client";
+import type { CustomFunction, Macro } from "@prisma/client";
 import { useUpdateToast } from "~/contexts/useToast";
 import { severityColors } from "~/types/Toast";
 import Button from "../Button";
 import { ArgType } from "@prisma/client";
 
 interface MacroFormProps {
-  macro?: Macro | null;
+  macro?: CustomFunction | null;
   onSuccess?: () => void;
   close: () => void;
 }
@@ -40,7 +40,7 @@ const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
     }
   }, [macro]);
 
-  const createMacro = api.macro.create.useMutation({
+  const createMacro = api.customFunction.create.useMutation({
     onSuccess: (data) => {
       updateToast.addToast({
         toastText: "created function successfully",
@@ -54,7 +54,7 @@ const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
 
         return {
           ...oldData,
-          macros: [...oldData.macros, data],
+          customFunctions: [...oldData.customFunctions, data],
         };
       });
 
@@ -69,7 +69,7 @@ const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
   });
 
   // Edit Macro Mutation
-  const updateMacro = api.macro.edit.useMutation({
+  const updateMacro = api.customFunction.edit.useMutation({
     onSuccess: (data) => {
       updateToast.addToast({
         toastText: "updated function successfully",
@@ -82,8 +82,8 @@ const MacroForm: React.FC<MacroFormProps> = ({ macro, onSuccess, close }) => {
 
         return {
           ...oldData,
-          macros: [
-            ...oldData.macros.filter((macro) => macro.id !== data.id),
+          customFunctions: [
+            ...oldData.customFunctions.filter((macro) => macro.id !== data.id),
             data,
           ],
         };

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useUser } from "~/contexts/useUser";
 import Modal from "../Modal";
 import Button from "../Button";
-import type { Macro } from "@prisma/client";
+import type { CustomFunction } from "@prisma/client";
 import DeleteFunctionModal from "./DeleteFunctionModal";
 import MacroForm from "./MacroForm";
 
@@ -14,10 +14,10 @@ const YourFunctions = ({
   closeModal: () => void;
 }) => {
   const useUserData = useUser();
-  const [deleteFunctionInfo, setDeleteFunctionInfo] = useState<null | Macro>(
+  const [deleteFunctionInfo, setDeleteFunctionInfo] = useState<null | CustomFunction>(
     null,
   );
-  const [editMacroInfo, setEditMacroInfo] = useState<null | Macro>(null);
+  const [editMacroInfo, setEditMacroInfo] = useState<null | CustomFunction>(null);
 
   const handleCloseDeleteFunctionInfo = () => {
     setDeleteFunctionInfo(null);
@@ -42,7 +42,7 @@ const YourFunctions = ({
                 {useUserData.userData &&
                 useUserData.userData.macros.length > 0 ? (
                   <div className="space-y-4">
-                    {useUserData.userData.macros.map((macro, index) => (
+                    {useUserData.userData.customFunctions.map((macro, index) => (
                       <div
                         key={`${index}-macro`}
                         className="flex items-center justify-between rounded-lg border p-4 shadow-sm transition duration-300 hover:shadow-md"
@@ -81,7 +81,7 @@ const YourFunctions = ({
           {deleteFunctionInfo ? (
             <DeleteFunctionModal
               handleClose={handleCloseDeleteFunctionInfo}
-              macro={deleteFunctionInfo}
+              customFunction={deleteFunctionInfo}
             />
           ) : null}
           {editMacroInfo ? (

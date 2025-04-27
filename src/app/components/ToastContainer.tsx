@@ -20,6 +20,7 @@ const ToastContainer = (): JSX.Element => {
           handleClose={() => handleClose(toast.id)}
           key={`${index}toast`}
           message={toast.message}
+          
         />
       ))}
     </>

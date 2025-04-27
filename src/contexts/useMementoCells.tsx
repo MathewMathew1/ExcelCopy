@@ -8,156 +8,196 @@ export interface CellData {
   sheetId: string;
 }
 
-type CellKey = string;
+export type CellKey = string;
 
 type CellKeyWithAbc = {
-    CellKey: string, 
-    CellKeyAbc: string
-}
-type ChangeRecord = {
-  cells: (CellData | null)[];
-  keys: CellKeyWithAbc [];
+  CellKey: string;
+  CellKeyAbc: string;
 };
+
+type ChangeRecord = {
+  sheetId: string;
+  cells: (CellData | null)[];
+  keys: CellKeyWithAbc[];
+};
+
+export type Change = {
+  sheetId: string;
+  rowNum: number;
+  colNum: number;
+  newValue: string | null;
+}
 
 export type CellDataMemento = {
-  cellData: Record<string, CellData | null>;
+  cellData: Record<string, Record<string, CellData | null>>; // { sheetId: { cellKey: CellData | null } }
   updateCellData: (
-    changes:
-      | {
-          sheetId: string;
-          rowNum: number;
-          colNum: number;
-          newValue: string | null;
-        }
-      | {
-          sheetId: string;
-          rowNum: number;
-          colNum: number;
-          newValue: string | null;
-        }[],
+    changes: Change|Change[]
   ) => void;
-  undo: () => CellKeyWithAbc[] | undefined
-  redo: () => CellKeyWithAbc[] | undefined
-  setInitialData: (cellData: Record<string, CellData | null>) => void;
+  undo: (sheetId: string) => CellKeyWithAbc[] | undefined;
+  redo: (sheetId: string) => CellKeyWithAbc[] | undefined;
+  setInitialData: (
+    data: Record<string, Record<string, CellData | null>>
+  ) => void;
+  addNewSheet: (data: Record<CellKey, CellData | null>, sheetId: string) => void
 };
 
-export function useCellDataMemento() {
-  const [cellData, setCellData] = useState<Record<CellKey, CellData | null>>(
-    {},
+export function useCellDataMemento(): CellDataMemento {
+  const [cellData, setCellData] = useState<
+    Record<string, Record<CellKey, CellData | null>>
+  >({});
+  const [history, setHistory] = useState<Record<string, ChangeRecord[]>>({});
+  const [redoStack, setRedoStack] = useState<Record<string, ChangeRecord[]>>(
+    {}
   );
-  const [history, setHistory] = useState<ChangeRecord[]>([]);
-  const [redoStack, setRedoStack] = useState<ChangeRecord[]>([]);
 
-  const updateCellData = useCallback(
-    (
-      changes:
-        | {
-            sheetId: string;
-            rowNum: number;
-            colNum: number;
-            newValue: string | null;
-          }
-        | {
-            sheetId: string;
-            rowNum: number;
-            colNum: number;
-            newValue: string | null;
-          }[],
-    ) => {
-      const allChanges = Array.isArray(changes) ? changes : [changes];
+  const updateCellData = useCallback((changes: Change|Change[]) => {
+    const allChanges = Array.isArray(changes) ? changes : [changes];
 
-      setCellData((prevData) => {
-        const nextData = { ...prevData };
-        const oldCells: (CellData | null)[] = [];
-        const keys: CellKeyWithAbc[] = [];
+    setCellData((prevData) => {
+      const newData = { ...prevData };
+      const grouped: Record<string, ChangeRecord> = {};
 
-        allChanges.forEach(({ sheetId, rowNum, colNum, newValue }) => {
-          const key = `${sheetId}-${rowNum}-${colNum}`;
-   
-          const cellKey =
-      `${sheetId}!${getColumnLetter(colNum)}${rowNum + 1}`.toUpperCase();
-          keys.push({CellKey: key, CellKeyAbc: cellKey});
-          oldCells.push(prevData[key] ?? null);
+      allChanges.forEach(({ sheetId, rowNum, colNum, newValue }) => {
+        if (!newData[sheetId]) newData[sheetId] = {};
 
-          if (newValue !== null) {
-            nextData[key] = { value: newValue, colNum, rowNum, sheetId };
-          } else {
-            delete nextData[key];
-          }
-        });
+        const key = `${sheetId}-${rowNum}-${colNum}`;
+        const abc = `${sheetId}!${getColumnLetter(colNum)}${rowNum + 1}`.toUpperCase();
 
-        setHistory((prev) => [...prev, { keys, cells: oldCells }]);
-        setRedoStack([]); // clear redo
-        return nextData;
+        if (!grouped[sheetId]) {
+          grouped[sheetId] = { sheetId, keys: [], cells: [] };
+        }
+
+        grouped[sheetId].keys.push({ CellKey: key, CellKeyAbc: abc });
+        grouped[sheetId].cells.push(newData[sheetId][key] ?? null);
+
+        if (newValue !== null) {
+          newData[sheetId][key] = { value: newValue, colNum, rowNum, sheetId };
+        } else {
+          delete newData[sheetId][key];
+        }
       });
-    },
-    [],
-  );
 
-  const setInitialData = (cellData: Record<CellKey, CellData | null>) => {
-    
-    setCellData(cellData);
-  };
+   
+      setHistory((prev) => {
+        const updated = { ...prev };
+        Object.entries(grouped).forEach(([sheetId, record]) => {
+          if (!updated[sheetId]) updated[sheetId] = [];
+          updated[sheetId] = [...updated[sheetId], record];
+        });
+        return updated;
+      });
 
-  const undo = useCallback(() => {
+      setRedoStack((prev) => {
+        const cleared = { ...prev };
+        Object.keys(grouped).forEach((sheetId) => {
+          cleared[sheetId] = [];
+        });
+        return cleared;
+      });
 
-    const last = history.at(-1);
+      return newData;
+    });
+  }, []);
+
+  const addNewSheet = (data: Record<CellKey, CellData | null>, sheetId: string) => {
+    setCellData(prevData => {
+      const newData = {...prevData}
+      newData[sheetId] = data
+      return newData
+    })
+  }
+
+  const undo = useCallback((sheetId: string) => {
+    const last = history[sheetId]?.at(-1);
     if (!last) return;
 
-    setHistory((prev) => prev.slice(0, -1));
-    setRedoStack((prev) => [
-      ...prev,
-      {
-        keys: last.keys,
-        cells: last.keys.map((k) => cellData[k.CellKey] ?? null),
-      },
-    ]);
+    setHistory((prev) => {
+      const updated = { ...prev };
+      updated[sheetId] = prev[sheetId]!.slice(0, -1);
+      return updated;
+    });
+
+    setRedoStack((prev) => {
+      const updated = { ...prev };
+      if (!updated[sheetId]) updated[sheetId] = [];
+      updated[sheetId] = [
+        ...updated[sheetId],
+        {
+          sheetId,
+          keys: last.keys,
+          cells: last.keys.map((k) => cellData[sheetId]?.[k.CellKey] ?? null),
+        },
+      ];
+      return updated;
+    });
 
     setCellData((prev) => {
-      const newData = { ...prev };
-
+      const updated = { ...prev };
+      const sheetData = { ...prev[sheetId] };
       last.keys.forEach((key, i) => {
         const cell = last.cells[i]!;
-        if (cell === null) delete newData[key.CellKey];
-        else newData[key.CellKey] = cell;
+        if (cell === null) delete sheetData[key.CellKey];
+        else sheetData[key.CellKey] = cell;
       });
-      return newData;
+      updated[sheetId] = sheetData;
+      return updated;
     });
 
     return last.keys;
   }, [history, cellData]);
 
-  const redo = useCallback(() => {
-    const last = redoStack.at(-1);
+  const redo = useCallback((sheetId: string) => {
+    const last = redoStack[sheetId]?.at(-1);
     if (!last) return;
 
-    setRedoStack((prev) => prev.slice(0, -1));
-    setHistory((prev) => [
-      ...prev,
-      {
-        keys: last.keys,
-        cells: last.keys.map((k) => cellData[k.CellKey] ?? null),
-      },
-    ]);
+    setRedoStack((prev) => {
+      const updated = { ...prev };
+      updated[sheetId] = prev[sheetId]!.slice(0, -1);
+      return updated;
+    });
+
+    setHistory((prev) => {
+      const updated = { ...prev };
+      if (!updated[sheetId]) updated[sheetId] = [];
+      updated[sheetId] = [
+        ...updated[sheetId],
+        {
+          sheetId,
+          keys: last.keys,
+          cells: last.keys.map((k) => cellData[sheetId]?.[k.CellKey] ?? null),
+        },
+      ];
+      return updated;
+    });
 
     setCellData((prev) => {
-      const newData = { ...prev };
+      const updated = { ...prev };
+      const sheetData = { ...prev[sheetId] };
       last.keys.forEach((key, i) => {
         const cell = last.cells[i]!;
-        if (cell === null) delete newData[key.CellKey];
-        else newData[key.CellKey] = cell;
+        if (cell === null) delete sheetData[key.CellKey];
+        else sheetData[key.CellKey] = cell;
       });
-      return newData;
+      updated[sheetId] = sheetData;
+      return updated;
     });
 
     return last.keys;
   }, [redoStack, cellData]);
 
+  const setInitialData = (
+    data: Record<string, Record<CellKey, CellData | null>>
+  ) => {
+    setCellData(data);
+  };
+  
   return {
     cellData,
     updateCellData,
     undo,
     redo,
     setInitialData,
-  } as CellDataMemento
+    addNewSheet
+  };
 }
+

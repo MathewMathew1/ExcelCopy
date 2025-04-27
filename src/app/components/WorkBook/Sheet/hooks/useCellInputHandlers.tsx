@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import type {MutableRefObject, RefObject} from "react"
 import type { CurrentCell } from "~/types/Cell";
-import { handleCellChange } from "~/helpers/sheetHelper";
+
 import { useSheet, useUpdateWorkBook } from "~/types/WorkBook";
 import type { Dragging } from "~/types/Dragging";
 import { getColumnLabel } from "~/helpers/column";
@@ -19,6 +19,7 @@ type CellInputHandlerProps = {
   eventManager: EventManager<EventMap>
   inputRef: RefObject<HTMLInputElement>;
   handleDragFormula: (targetRow: number, targetCol: number) => void
+  saveChangeInCell: (rowNum: number, colNum: number, newValue: string) => void
 };
 
 const useCellInputHandlers = ({
@@ -31,7 +32,8 @@ const useCellInputHandlers = ({
   setCurrentCellFunc,
   eventManager,
   inputRef,
-  handleDragFormula
+  handleDragFormula,
+  saveChangeInCell
 }: CellInputHandlerProps) => {
   const workbook = useSheet();
   const updateWorkBook = useUpdateWorkBook();
@@ -44,21 +46,17 @@ const useCellInputHandlers = ({
     [setCurrentCell],
   );
 
+ 
+
   const handleKeyPressInInput = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (!currentCell) return;
 
       if (e.key === "Enter") {
-        handleCellChange(
-          currentCell.sheet,
-          {
-            rowNum: currentCell.rowNum,
-            colNum: currentCell.colNum,
-            newValue: currentCell.value,
-          },
-          updateWorkBook,
-          cellCache.current,
-          cellDependencies.current,
+        saveChangeInCell(
+            currentCell.rowNum,
+            currentCell.colNum,
+            currentCell.value,
         );
         setCurrentCell(null);
       }
@@ -73,17 +71,11 @@ const useCellInputHandlers = ({
   const handleBlur = useCallback(
     (e: React.FocusEvent<HTMLInputElement>) => {
       if (currentCell && e.relatedTarget !== mainInputRef.current) {
-        handleCellChange(
-          currentCell.sheet,
-          {
-            rowNum: currentCell.rowNum,
-            colNum: currentCell.colNum,
-            newValue: currentCell.value,
-          },
-          updateWorkBook,
-          cellCache.current,
-          cellDependencies.current,
-        );
+        saveChangeInCell(
+            currentCell.rowNum,
+            currentCell.colNum,
+            currentCell.value,
+         )
 
         setCurrentCell((prev) =>
           prev ? { ...prev, isCurrentlySelected: false } : prev,

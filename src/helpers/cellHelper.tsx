@@ -3,6 +3,7 @@ import { evaluateFormula } from "./sheetHelper";
 import type { Sheet } from "@prisma/client";
 import type { SheetWithCells } from "~/types/WorkBook";
 import type { CellData, CellDataWithNull } from "~/types/Cell";
+import { getColumnLabel } from "./column";
 
 export const parseCellReferenceWithSheet = (
   cellRef: string,
@@ -12,6 +13,12 @@ export const parseCellReferenceWithSheet = (
   return cellRef.includes("!")
     ? (cellRef.split("!") as [string, string])
     : [sheetId ?? baseSheetId, cellRef];
+};
+
+export const formatRange = (start: { row: number; col: number }, end: { row: number; col: number }) => {
+  const startLabel = `${getColumnLabel(start.col)}${start.row + 1}`; // Adjust for 1-based row index
+  const endLabel = `${getColumnLabel(end.col)}${end.row + 1}`;
+  return `${startLabel}:${endLabel}`;
 };
 
 export const findTargetSheet = (
@@ -102,7 +109,7 @@ export const sortCells = ({
   end: { row: number; col: number };
   sortAscending: boolean;
   sheetId: string;
-  cellData: Record<string, CellData | null>;
+  cellData: Record<string, Record<string, CellData | null>>;
   computedCellData: Record<string, string | number>
 }): Record<string, CellDataWithNull | null> => {
   const updatedCells: Record<string, CellDataWithNull | null> = {}; 
@@ -112,22 +119,24 @@ export const sortCells = ({
 
     for (let row = start.row; row <= end.row; row++) {
       const key = `${sheetId}-${row}-${col}`;
-      if (cellData[key] && cellData[key].value.trim() !== "" && computedCellData[key]) {
-        columnCells.push({ key, value: cellData[key].value, row, computedValue: computedCellData[key] });
+      if (cellData[sheetId]![key] && cellData[sheetId]![key].value.trim() !== "" && computedCellData[key]) {
+        columnCells.push({ key, value: cellData[sheetId]![key].value, row, computedValue: computedCellData[key] });
       }
     }
 
     columnCells.sort((a, b) => {
-      if (a.computedValue === b.computedValue) return 0;
+    
+      console.log(Number(b.computedValue))
       return sortAscending
-        ? a.computedValue.toString().localeCompare(b.computedValue.toString(), undefined, { numeric: true })
-        : b.computedValue.toString().localeCompare(a.computedValue.toString(), undefined, { numeric: true });
+        ?  Number(a.computedValue) - Number(b.computedValue)
+        :  Number(b.computedValue) - Number(a.computedValue);
     });
-
+    console.log(columnCells)
 
     for (let i = 0; i <= end.row - start.row; i++) {
       const newRow = start.row + i;
       const newKey = `${sheetId}-${newRow}-${col}`;
+   
 
       if (i < columnCells.length) {
 
@@ -138,7 +147,7 @@ export const sortCells = ({
         };
       } else {
 
-        if (cellData[newKey] && cellData[newKey].value.trim() !== "") {
+        if (cellData[sheetId]![newKey] && cellData[sheetId]![newKey].value.trim() !== "") {
           updatedCells[newKey] = {
             value: null,
             colNum: col,
@@ -148,7 +157,7 @@ export const sortCells = ({
       }
     }
   }
-  console.log(updatedCells)
+
   return updatedCells;
 };
 

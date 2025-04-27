@@ -1,14 +1,14 @@
-// hooks/useMacroRegistration.ts
+// hooks/useCustomFunctionRegistration.ts
 import { useEffect, useState } from "react";
 import { FormulaFunctions } from "~/helpers/formulasSheet";
-import { CONVERTED_TYPE_ARGS } from "~/types/Macro";
 import { LockdownManager } from "~/helpers/customFunctions";
 import "ses";
 import { useUser } from "./useUser";
+import { CONVERTED_TYPE_ARGS } from "~/types/Macro";
 
-export const useMacroRegistration = () => {
+export const useCustomFunctionRegistration = () => {
       const useUserData = useUser();
-      const [loadedMacros, setLoadedMacros] = useState(false);
+      const [loadedCustomFunctions, setLoadedCustomFunctions] = useState(false);
 
   useEffect(() => {
     const userData = useUserData.userData
@@ -19,14 +19,14 @@ export const useMacroRegistration = () => {
       LockdownManager.applyLockdown();
     }
 
-    userData.macros.forEach((macro) => {
-      const argsConverted = macro.args.map((arg) => ({
+    userData.customFunctions.forEach((customFn) => {
+      const argsConverted = customFn.args.map((arg) => ({
         ...arg,
         type: CONVERTED_TYPE_ARGS[arg.type] || "number",
       }));
 
       FormulaFunctions.register(
-        macro.name,
+        customFn.name,
         (args) => {
           try {
             const c = new Compartment({
@@ -36,28 +36,28 @@ export const useMacroRegistration = () => {
               parseFloat: harden(parseFloat),
               console: harden(console),
             });
-            const func = c.evaluate(`(${macro.code})`) as unknown;
+            const func = c.evaluate(`(${customFn.code})`) as unknown;
             if (typeof func === "function") {
               const value: unknown =  (func as (...args: unknown[]) => unknown)(...args);
               return typeof value === "string" || typeof value === "number"
                 ? value
                 : "0";
             } else {
-              return "ERROR: Invalid macro function";
+              return "ERROR: Invalid customFn function";
             }
           } catch (e) {
             console.log(e);
-            return "ERROR: Macro execution failed";
+            return "ERROR: customFn execution failed";
           }
         },
         {
-          description: macro.description ?? "User-defined function",
+          description: customFn.description ?? "User-defined function",
           args: argsConverted,
         },
       );
     });
-    setLoadedMacros(true)
+    setLoadedCustomFunctions(true)
   }, [useUserData.userData]);
 
-  return {loadedMacros}
+  return {loadedCustomFunctions}
 };

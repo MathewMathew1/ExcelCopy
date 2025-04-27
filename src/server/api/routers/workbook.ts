@@ -74,7 +74,7 @@ export const workbookRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       const { sheetId, cells } = input;
-      console.log(cells)
+      
       return ctx.db.sheet.update({
         where: { id: sheetId },
         data: {

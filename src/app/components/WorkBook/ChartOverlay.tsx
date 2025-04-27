@@ -56,15 +56,15 @@ const ChartOverlay = ({ scrollLeft, scrollTop }: { scrollLeft: number; scrollTop
       }
     };
 
-    document.addEventListener("keydown", (e)=>void handleClick(e));
+    document.addEventListener("keydown", handleClick);
 
     return () => {
-      document.removeEventListener("keydown", (e)=>void handleClick(e));
+      document.removeEventListener("keydown", handleClick);
     };
   }, [cellContext.chartData, cellContext, updateWorkBook]);
 
   return (
-    <div className="relative z-[500]" style={{ transform: `translate(${-scrollLeft}px, ${-scrollTop}px)` }}>
+    <div className="relative z-[66]" style={{ transform: `translate(${-scrollLeft}px, ${-scrollTop}px)` }}>
         {chartBoxes.map((chart, index) => (
           <ChartComponent chartDisplayInfo={chart.chartDisplayInfo} chart={chart.chart} key={`${index} chart`}/>
         ))}

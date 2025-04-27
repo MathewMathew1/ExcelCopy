@@ -15,6 +15,8 @@ const SheetTabMenu = ({
   setRenamingSheetId: Dispatch<SetStateAction<string | null>>;
   setRenameValue: Dispatch<SetStateAction<string>>;
 }) => {
+
+
   const updateWorkBook = useUpdateWorkBook();
   const workbook = useSheet();
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -55,7 +57,7 @@ const SheetTabMenu = ({
   return (
     <div
     ref={menuRef}
-      className="absolute bottom-[100%] z-50 rounded-md border bg-white py-2 text-sm shadow-md"
+      className="absolute bottom-[100%]  rounded-md border bg-white py-2 text-sm shadow-md"
       style={{
         left: contextMenu.x,
       }}

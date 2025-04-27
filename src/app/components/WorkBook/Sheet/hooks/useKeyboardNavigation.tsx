@@ -21,7 +21,7 @@ const useKeyboardNavigation = ({
   useEffect(() => {
     const listener = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key === "z") {
-        const keys = workbook.cellDataMemento.undo();
+        const keys = workbook.cellDataMemento.undo(workbook.currentSheet.id);
 
         keys?.forEach((key) => {
           clearCache(
@@ -32,7 +32,7 @@ const useKeyboardNavigation = ({
         });
       }
       if (e.ctrlKey && e.key === "y") {
-        const keys = workbook.cellDataMemento.redo();
+        const keys = workbook.cellDataMemento.redo(workbook.currentSheet.id);
         keys?.forEach((key) => {
           clearCache(
             key.CellKeyAbc,
@@ -50,6 +50,7 @@ const useKeyboardNavigation = ({
     workbook.cellDataMemento.undo,
     workbook.cellDataMemento.redo,
     workbook.cellDataMemento,
+    workbook.currentSheet.id
   ]);
 
   useEffect(() => {

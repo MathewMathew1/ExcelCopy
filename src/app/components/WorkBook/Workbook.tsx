@@ -12,10 +12,13 @@ import { useCellDataMemento } from "~/contexts/useMementoCells";
 import { useSheetMutations } from "~/contexts/useSheetMutations";
 import { useChartMutations } from "~/contexts/useChartMutations";
 import { useSheetLoader } from "~/contexts/useSheetLoader";
-import { useMacroRegistration } from "~/contexts/useMacroRegristration";
+import { useCustomFunctionRegistration } from "~/contexts/useCustomFunctionRegistration";
 import { useAutoSave } from "~/contexts/useAutoSaver";
-import { useMacroMutations } from "~/contexts/useMacroMutations";
+import { useCustomFunctionsMutations } from "~/contexts/useCustomFunctionsMutations";
 import { SheetContext, WorkBookUpdateContext } from "~/types/WorkBook";
+import { useMacroMutations } from "~/contexts/useMacroMutations";
+import useWorkbookActions from "~/contexts/useWorkbookActions";
+import useMacroRecorder from "~/contexts/useMacroRecorder";
 
 const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
   const params = useParams<{ id: string }>();
@@ -31,13 +34,14 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
     currentSheetId,
     changeSheetSize,
     createSheet
-  } = useSheetMutations(workbook, idOfProject);
+  } = useSheetMutations(workbook, idOfProject, cellDataMemento);
 
   const { versionOfCharts, deleteChartFunc, updateChartFunc, createChartFunc  } = useChartMutations(workbook);
-  const { deleteMacroFunc } = useMacroMutations()
+  const { deleteCustomFunctionFunc } = useCustomFunctionsMutations()
   const isInitialized = useRef(false);
   useSheetLoader(workbook.sheets, currentSheetId, setCurrentSheetId);
-  const { loadedMacros } = useMacroRegistration();
+  const { loadedCustomFunctions } = useCustomFunctionRegistration();
+  
 
   const { markUnsaved, saveAll, handleUpdateSheet } = useAutoSave({
     currentSheetId,
@@ -46,21 +50,32 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
     workbook
   });
 
+  const macroMutations = useMacroMutations()
+
+  const macroRecorder = useMacroRecorder()
+  const workbookActions = useWorkbookActions({copySheetFunc, addMacroStep: macroRecorder.addMacroStep})
+
   useEffect(() => {
     if(isInitialized.current) return
     isInitialized.current = true
 
     if (workbook && workbook.sheets.length > 0) {
-      const initialData: Record<string, CellData | null> = {};
+      const initialData: Record<string, Record<string, CellData | null>> = {};
       workbook.sheets.forEach((sheet) => {
+        const data:Record<string, CellData | null> = {}
         sheet.cells.forEach((cell) => {
-          initialData[`${sheet.id}-${cell.rowNum}-${cell.colNum}`] = {
+          
+
+          const key = `${sheet.id}-${cell.rowNum}-${cell.colNum}`
+          data[key] = {
             value: cell.value ?? "",
             colNum: cell.colNum,
             rowNum: cell.rowNum,
             sheetId: sheet.id,
           };
+        
         });
+        initialData[sheet.id] = data
       });
       cellDataMemento.setInitialData(initialData);
     }
@@ -98,18 +113,20 @@ const Workbook = ({ workbook }: { workbook: WorkBookWithSheets }) => {
             createChartFunc,
             changeSheetSize,
             saveAll,
-            deleteMacroFunc,
+            deleteCustomFunctionFunc,
             handleUpdateSheet,
             handleCellChange,
             createSheet,
             setCurrentSheet: setCurrentSheetId,
             deleteSheetFunc,
             renameSheetFunc,
-            copySheetFunc,
+            ...workbookActions,
             deleteChartFunc,
+            ...macroMutations,
+            ...macroRecorder
           }}
         >
-          {loadedMacros ? (
+          {loadedCustomFunctions ? (
             <Sheet key={"sheet"} />
           ) : (
             <div className="h-full w-full">

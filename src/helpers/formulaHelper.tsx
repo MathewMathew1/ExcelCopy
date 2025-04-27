@@ -84,7 +84,7 @@ export const updateFormulaForDraggedCell = (
     const newColRef = numToCol(newColNum);
     return `${newColRef}${newRowNum}`;
   });
-  console.log(updatedFormula)
+ 
   return updatedFormula;
 };
 

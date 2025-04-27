@@ -1,29 +1,29 @@
 import { useUpdateWorkBook } from "~/types/WorkBook"; 
 import Button from "../Button";
-import type { Macro } from "@prisma/client";
+import type { CustomFunction } from "@prisma/client";
 
 const DeleteFunctionModal = ({
   handleClose,
-  macro,
+  customFunction,
 }: {
   handleClose: () => void;
-  macro?: Macro | null;
+  customFunction?: CustomFunction | null;
 }) => {
   const updateWorkbook = useUpdateWorkBook();
 
-  const deleteMacroFunction = async () => {
-    if (!macro) return;
-    await updateWorkbook.deleteMacroFunc(macro.id);
+  const deleteCustomFunctionFunction = async () => {
+    if (!customFunction) return;
+    await updateWorkbook.deleteCustomFunctionFunc(customFunction.id);
     handleClose();
   };
 
   return (
     <>
-      {macro && (
-        <div className="absolute z-50 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+      {customFunction && (
+        <div className="absolute  top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
         <div className="relative flex flex-col items-center justify-center p-8 bg-white rounded-2xl shadow-2xl border border-gray-200">
           <h3 className="text-xl font-bold text-gray-800 mb-6">
-            Are you sure you want to delete <span className="text-red-500">{macro.name}</span>?
+            Are you sure you want to delete <span className="text-red-500">{customFunction.name}</span>?
           </h3>
           <div className="flex justify-end gap-4 mt-4 w-full">
             <Button
@@ -36,7 +36,7 @@ const DeleteFunctionModal = ({
             <Button
               color="red"
               className="flex-1 rounded-lg bg-red-500 px-4 py-2 text-white hover:bg-red-600 shadow-md"
-              onClick={deleteMacroFunction}
+              onClick={deleteCustomFunctionFunction}
             >
               Delete
             </Button>

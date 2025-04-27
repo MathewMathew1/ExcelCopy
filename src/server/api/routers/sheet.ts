@@ -103,11 +103,11 @@ export const sheetRouter = createTRPCRouter({
         where: { id: sheetId },
         include: { workbook: true, charts: true },
       });
-
+     
       if (!sheet || sheet.workbook.authorId !== user.id) {
         throw new Error("Unauthorized or sheet not found");
       }
-
+    
       return await ctx.db.$transaction(async (prisma) => {
         const copiedSheet = await prisma.sheet.create({
           data: {
@@ -115,6 +115,7 @@ export const sheetRouter = createTRPCRouter({
             workbookId,
             rowCount: sheet.rowCount,
             colCount: sheet.colCount,
+            cells: sheet.cells
           },
         });
 
@@ -140,6 +141,7 @@ export const sheetRouter = createTRPCRouter({
         const charts = sheet.charts.map((c) => {
           return { ...c, id: copiedSheet.id };
         });
+       
         return { ...copiedSheet, charts };
       });
     }),

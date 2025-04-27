@@ -1,4 +1,5 @@
 // hooks/useSortHandler.ts
+import { useCallback } from "react";
 import { sortCells } from "~/helpers/cellHelper";
 import { handleCellChange } from "~/helpers/sheetHelper";
 import { useSheet, useUpdateWorkBook } from "~/types/WorkBook";
@@ -14,7 +15,7 @@ export default function useSortHandler({cellCache, cellDependencies, computedCel
   const updateWorkBook = useUpdateWorkBook();
   const sheet = workbook.currentSheet;
 
-  const handleSort = ({
+  const handleSort = useCallback(({
     start,
     end,
     sortAscending,
@@ -33,7 +34,7 @@ export default function useSortHandler({cellCache, cellDependencies, computedCel
       cellData: workbook.cells,
       computedCellData,
     });
-
+    console.log(computedCellData)
     const changes: {
       rowNum: number;
       colNum: number;
@@ -57,7 +58,7 @@ export default function useSortHandler({cellCache, cellDependencies, computedCel
       cellCache.current,
       cellDependencies.current,
     );
-  };
+  }, [computedCellData, workbook.cells, sheet.id, updateWorkBook, cellCache, cellDependencies]);
 
   return { handleSort };
 }

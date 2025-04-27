@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useSheet, useUpdateWorkBook } from "~/types/WorkBook";
-import { extractSelectedAreas} from "~/helpers/sheetHelper";
+import { extractSelectedAreas, handleCellChange } from "~/helpers/sheetHelper";
 import {
   evaluateCellValue,
   getCellIndexes,
@@ -28,6 +28,22 @@ const useCellState = () => {
   const cellDependencies = useRef<Record<string, Set<string>>>({});
 
   const sheet = workbook.currentSheet;
+
+  const saveChangeInCell = (rowNum: number, colNum: number, newValue: string) => {
+    if (!currentCell) return;
+
+    handleCellChange(
+      currentCell.sheet,
+      {
+        rowNum,
+        colNum,
+        newValue,
+      },
+      updateWorkBook,
+      cellCache.current,
+      cellDependencies.current,
+    );
+  }
 
   const getCellValue = useCallback(
     (
@@ -73,7 +89,9 @@ const useCellState = () => {
       visited.add(fullCellRef);
 
       const rawValue =
-        workbook.cells[getCellKey(targetSheet, rowIndex, colIndex)];
+        workbook.cells[targetSheet.id]![
+          getCellKey(targetSheet, rowIndex, colIndex)
+        ];
 
       const result: string | number = evaluateCellValue(
         rawValue?.value,
@@ -94,19 +112,21 @@ const useCellState = () => {
   const computedCellData = useMemo(() => {
     const newComputedCellData: Record<string, string | number> = {};
 
-    for (const key in workbook.cells) {
-      const cellKey = key;
-      const value = workbook.cells[key];
+    for (const sheetKey in workbook.cells) {
+      for (const key in workbook.cells[sheetKey]) {
+        const cellKey = key;
+        const value = workbook.cells[sheetKey][key];
 
-      const columnNumber = value ? value.colNum : 1;
-      const rowNumber = value ? value.rowNum : 1;
+        const columnNumber = value ? value.colNum : 1;
+        const rowNumber = value ? value.rowNum : 1;
 
-      try {
-        newComputedCellData[cellKey] = getCellValue(
-          `${getColumnLabel(columnNumber)}${rowNumber + 1}`,
-        );
-      } catch {
-        newComputedCellData[cellKey] = `#CIRC!`;
+        try {
+          newComputedCellData[cellKey] = getCellValue(
+            `${getColumnLabel(columnNumber)}${rowNumber + 1}`,
+          );
+        } catch {
+          newComputedCellData[cellKey] = `#CIRC!`;
+        }
       }
     }
 
@@ -129,7 +149,7 @@ const useCellState = () => {
     setSelect = true,
   ) => {
     const cellKey = `${sheet.id}-${rowNum}-${colNum}`;
-    const value = workbook.cells[cellKey]?.value ?? "";
+    const value = workbook.cells[sheet.id]![cellKey]?.value ?? "";
     const updatedValue = value.replace(/([\w\d]+)!/g, (match, sheetId) => {
       const targetSheet = workbook.sheets.find((s) => s.id === sheetId);
       return targetSheet ? `${targetSheet.name}!` : match;
@@ -190,7 +210,8 @@ const useCellState = () => {
     getCellValue,
     setCurrentCellFunc,
     saveChangesInChart,
-    handleDoubleClick
+    handleDoubleClick,
+    saveChangeInCell
   };
 };
 

@@ -3,16 +3,18 @@ import { router,  createCallerFactory } from "./trpc";
 import { workbookRouter } from "./routers/workbook";
 import { sheetRouter } from "./routers/sheet";
 import { userRouter } from "./routers/user";
-import { macroRouter } from "./routers/macro";
+import { customFunctionRouter } from "./routers/customFunctions";
 import { chartRouter } from "./routers/charts";
+import { macroRouter } from "./routers/macro";
 
 export const appRouter = router({
   post: postRouter,
   workbook: workbookRouter,
   sheet: sheetRouter,
   user: userRouter,
-  macro: macroRouter,
-  chart: chartRouter
+  chart: chartRouter,
+  customFunction: customFunctionRouter,
+  macro: macroRouter
 });
 
 

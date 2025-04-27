@@ -23,7 +23,7 @@ const DeleteSheetModal = ({isOpen, handleClose, deleteFunc, sheetId}: {
     return <> 
     {isOpen?
         <Modal onClose={handleClose}>
-            <div onClick={()=>handleClose()} className="flex mt-3 flex-col p-5 text-white">
+            <div onClick={()=>handleClose()} className="flex mt-3 flex-col p-5 text-white z-[2000]">
                 <div> <h3 className="text-[1rem] text-bold mb-3">Are you sure you want to delete {sheet.name}?</h3></div>
                 <div className="flex justify-end gap-2">
                     <Button color="blue" onClick={()=>handleClose()}>Cancel</Button>

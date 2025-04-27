@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef} from "react";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useCallback, useEffect} from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import type { SheetWithCells } from "~/types/WorkBook";
 
 export const useSheetLoader = (
@@ -7,11 +7,8 @@ export const useSheetLoader = (
   currentSheetId: string | null,
   setCurrentSheetId: (id: string) => void,
 ) => {
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-
-  const changes = useRef(false)
 
   const createQueryString = useCallback(
     (name: string, value: string) => {
@@ -25,8 +22,6 @@ export const useSheetLoader = (
   );
 
   useEffect(() => {
-   
-
     if (!searchParams) return;
     const sheetFromUrl = workbookSheets.find(
       (sheet) => sheet.id === searchParams.get("sheet"),
@@ -45,10 +40,7 @@ export const useSheetLoader = (
   }, [searchParams, workbookSheets, pathname ]);
 
   useEffect(() => {
-
-
     if (currentSheetId) {
-      console.log(currentSheetId)
       const path = pathname + "?" + createQueryString("sheet", currentSheetId)
       window.history.pushState({}, "",path);
     }

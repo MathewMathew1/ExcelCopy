@@ -4,11 +4,12 @@ import type { SheetWithCells, WorkBookWithSheets } from "~/types/WorkBook";
 import { useUpdateToast } from "./useToast";
 import { severityColors } from "~/types/Toast";
 import { api } from "~/trpc/react";
+import { CellKey } from "./useMementoCells";
 
 interface UseAutoSaveProps {
   currentSheetId: string | null;
   workbookSheets: SheetWithCells[];
-  cellData: Record<string, CellData | null>;
+  cellData: Record<string, Record<CellKey, CellData | null>>;
   workbook: WorkBookWithSheets
 }
 
@@ -41,10 +42,8 @@ export function useAutoSave({
     if (!sheet) return;
 
     const updatedCells = Object.values(cellData)
-      .filter((value) => value?.sheetId === sheetId)
-      .map((value) => ({
-        ...value!,
-      }));
+      .filter((value) => value[sheetId])
+      .map((value) => {return value.key!});
     try {
       await updateSheet.mutateAsync({ sheetId, cells: updatedCells });
 
@@ -109,14 +108,14 @@ export function useAutoSave({
     
         const updatedCells = [];
   
-        for (const key in cellData) {
-          const value = cellData[key];
-          if (!value || value.sheetId != sheetId) continue;
-          const cell = { ...value };
+        for (const key in cellData[sheetId]) {
+          const value = cellData[sheetId][key];
+       
+          if (!value) continue;
     
-          updatedCells.push(cell);
+          updatedCells.push(value);
         }
-    
+     
         try {
           await updateSheet.mutateAsync({ sheetId, cells: updatedCells });
         } catch (error) {

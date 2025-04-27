@@ -17,7 +17,7 @@ const Toast: React.FC<ToastProps> = ({
   return (
     <div
       style={{ bottom: `${bottom}px` }}
-      className="fixed right-8 w-[300px] animate-slide-up fade-in"
+      className="fixed right-8 w-[300px] animate-slide-up fade-in z-[1000]"
     >
       <div
         className={`flex items-center justify-between gap-3 rounded-lg px-4 py-3 shadow-lg ${variant} text-white`}

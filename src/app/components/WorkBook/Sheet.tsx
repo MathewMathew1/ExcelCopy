@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { useSheet } from "~/types/WorkBook";
+import { useSheet, useUpdateWorkBook } from "~/types/WorkBook";
 import SheetTabs from "./SheetTabs";
 import SuggestionFormulaList from "./SuggestionFormulaList";
 import { CellContext } from "~/contexts/useCellContext";
@@ -13,11 +13,14 @@ import useFormulaManagement from "./Sheet/hooks/useFormulaManagment";
 import useKeyboardNavigation from "./Sheet/hooks/useKeyboardNavigation";
 import useCellInputHandlers from "./Sheet/hooks/useCellInputHandlers";
 import useSortHandler from "./Sheet/hooks/useSortHandler";
+import useMacroRegistration from "~/contexts/useMacroRegister";
+import useSheetActions from "~/contexts/useSheetActions";
 
 const eventManager = new EventManager<EventMap>();
 
 const Sheet = () => {
   const workbook = useSheet();
+  const updateWorkBook = useUpdateWorkBook()
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const mainInputRef = useRef<HTMLInputElement | null>(null);
@@ -37,7 +40,16 @@ const Sheet = () => {
     cellDependencies,
     saveChangesInChart,
     handleDoubleClick,
+    saveChangeInCell
   } = useCellState();
+  const { handleSort } = useSortHandler({
+    computedCellData,
+    cellCache,
+    cellDependencies,
+  });
+
+  
+  const sheetActions = useSheetActions({handleSort, addMacroStep: updateWorkBook.addMacroStep, saveChangesInChart, saveChangeInCell})
 
   const {
     draggedFormula,
@@ -56,6 +68,7 @@ const Sheet = () => {
     currentCell,
     inputRef,
     mainInputRef,
+    ...sheetActions
   });
 
   useKeyboardNavigation({
@@ -70,7 +83,7 @@ const Sheet = () => {
     handleKeyPressInInput,
     handleBlur,
     updateCurrentCellValue,
-    handleCellClick
+    handleCellClick,
   } = useCellInputHandlers({
     currentCell,
     setCurrentCell,
@@ -82,15 +95,20 @@ const Sheet = () => {
     eventManager,
     inputRef,
     setCurrentCellFunc,
+    ...sheetActions
   });
 
-  const { handleSort } = useSortHandler({
-    computedCellData,
-    cellCache,
-    cellDependencies,
-  });
+
 
   const sheet = workbook.currentSheet;
+
+  const { runMacroScript } = useMacroRegistration({
+    cellCache: cellCache.current,
+    cellDependencies: cellDependencies.current,
+    saveChangesInChart,
+    handleSort,
+    computedCellData,
+  });
 
   return (
     <>
@@ -101,7 +119,7 @@ const Sheet = () => {
           setChartData,
           columnWidths,
           setColumnWidths,
-          handleSort,
+          ...sheetActions,
           selectedAreas,
           setDraggedFormula,
           draggedFormula,
@@ -125,6 +143,7 @@ const Sheet = () => {
           onElementChange: (value) => handleInputChange(value),
           onElementBlur: handleBlur,
           handleKeyPress: handleKeyPressInInput,
+          runMacroScript,
         }}
       >
         <div className="sheet relative flex h-full flex-col">
@@ -143,7 +162,7 @@ const Sheet = () => {
                 key="input"
                 ref={mainInputRef}
                 type="text"
-                className="w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-1 text-gray-900 shadow-sm focus:outline-none"
+                className="z-[60] w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-1 text-gray-900 shadow-sm focus:outline-none"
               />
             </SuggestionFormulaList>
 
@@ -159,7 +178,7 @@ const Sheet = () => {
         </div>
         {chartData?.showChart ? (
           <ChartEditor
-            onSave={(chart) => saveChangesInChart(chart)}
+            onSave={(chart) => sheetActions.saveChangesInChart(chart)}
             onCancel={() => setChartData(null)}
             sheet={sheet}
             existingChart={chartData.chart}

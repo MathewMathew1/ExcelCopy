@@ -24,7 +24,8 @@ const ListCell = ({
 
   const cellKey = `${sheet.id}-${rowIndex}-${columnIndex}`;
   
-  const currentValue = workbook.cells[cellKey]?.value ?? "";
+  const sheetValues = workbook.cells[sheet.id]
+  const currentValue = sheetValues? sheetValues[cellKey]?.value ?? "" : ""
   const displayValue = computedCellData[cellKey] ?? "";
 
  
