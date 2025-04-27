@@ -62,7 +62,7 @@ const useSheetActions = ({
   };
 
   const saveChangeInCellAction = (rowNum: number, colNum: number, newValue: string) =>{
-    const command = `SET_VALUE -cell ${getColumnLabel(rowNum+1)}${colNum+1} -value "${newValue}"`;  
+    const command = `SET_VALUE -cell ${getColumnLabel(colNum)}${rowNum+1} -value "${newValue}"`;  
    
     addMacroStep(command);
     saveChangeInCell(rowNum, colNum, newValue)
