@@ -252,6 +252,7 @@ const Cell = ({
     setDraggedFormula(null);
   };
 
+
   return (
     <div style={style} className={`${isEditing? "z-[40]": ""}`}>
       <div

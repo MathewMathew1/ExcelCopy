@@ -4,13 +4,14 @@ import { useSheet } from "~/types/WorkBook";
 import type { Sheet } from "@prisma/client";
 import type { CurrentCell } from "~/types/Cell";
 
-const ListCell = ({
-  data,
+
+export const ListCell = ({
+  additionalData,
   columnIndex,
   rowIndex,
   style,
 }: {
-  data: {
+  additionalData: {
     sheet: Sheet;
     currentCell: CurrentCell|null;
     computedCellData: Record<string, string | number>;
@@ -19,7 +20,7 @@ const ListCell = ({
   rowIndex: number;
   style: React.CSSProperties;
 }) => {
-  const { sheet, currentCell, computedCellData } = data;
+  const { sheet, currentCell, computedCellData } = additionalData;
   const workbook = useSheet();
 
   const cellKey = `${sheet.id}-${rowIndex}-${columnIndex}`;
@@ -47,6 +48,20 @@ const ListCell = ({
     />
   );
 };
+
+const areEqual = (prevProps: any, nextProps: any) => {
+
+  return (
+    prevProps.columnIndex === nextProps.columnIndex &&
+    prevProps.rowIndex === nextProps.rowIndex &&
+    prevProps.style === nextProps.style &&
+    prevProps.additionalData.sheet.id === nextProps.additionalData.sheet.id &&
+    prevProps.additionalData.currentCell === nextProps.additionalData.currentCell &&
+    prevProps.additionalData.computedCellData === nextProps.additionalData.computedCellData
+  );
+};
+
+export const MemoizedListCell2 = React.memo(ListCell, areEqual);
 
 const MemoizedCell = React.memo(Cell, (prevProps, nextProps) => {
 

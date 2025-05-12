@@ -1,58 +1,70 @@
 import React, { useEffect, useState } from "react";
-import { useSheet, useUpdateWorkBook } from "~/types/WorkBook"; 
+import { useSheet, useUpdateWorkBook } from "~/types/WorkBook";
 import { useCellContext } from "~/contexts/useCellContext";
 import ChartComponent from "./Charts/ChartComponent";
 import type { ChartBox } from "~/types/Chart";
 import type { Chart } from "@prisma/client";
 
-
-const ChartOverlay = ({ scrollLeft, scrollTop }: { scrollLeft: number; scrollTop: number }) => {
+const ChartOverlay = ({
+  getElementLeftOffset,
+  getElementTopOffset,
+  offsetVersion
+}: {
+  getElementLeftOffset: (index: number) => number;
+  getElementTopOffset: (index: number) => number;
+   offsetVersion: number
+}) => {
   const workbook = useSheet();
   const [chartBoxes, setChartBoxes] = useState<
- {chartDisplayInfo: ChartBox, chart: Chart}[]
+    { chartDisplayInfo: ChartBox; chart: Chart }[]
   >([]);
 
-  const updateWorkBook = useUpdateWorkBook()
-  const cellContext = useCellContext()
-  const charts  = workbook.currentSheet.charts 
+  const updateWorkBook = useUpdateWorkBook();
+  const cellContext = useCellContext();
+  const charts = workbook.currentSheet.charts;
 
   useEffect(() => {
-    const tableElement = document.getElementById("excel-table");
-    if (!tableElement) return;
-
-    const tableRect = tableElement.getBoundingClientRect();
-
     const newCharts = charts
       .filter((chart) => chart.sheetId === workbook.currentSheet.id)
       .map((chart) => {
-        const startCell = document.getElementById(`cell-${chart.anchorRow}-${chart.anchorCol}`);
-       
-        if (!startCell) return null;
+        const left = getElementLeftOffset(chart.anchorCol);
+        const top = getElementTopOffset(chart.anchorRow);
 
-        const rect = startCell.getBoundingClientRect();
 
-        return {chartDisplayInfo: {
-          top: rect.top - tableRect.top + scrollTop,
-          left: rect.left - tableRect.left + scrollLeft,
-          width: chart.width,
-          height: chart.height,
-          type: chart.type,
-        }, chart: chart}
+        return {
+          chartDisplayInfo: {
+            top: top,
+            left: left,
+            width: chart.width,
+            height: chart.height,
+            type: chart.type,
+          },
+          chart: chart,
+        };
       });
-  
-    setChartBoxes(newCharts.filter(Boolean) as {chartDisplayInfo: ChartBox, chart: Chart}[] );
-  }, [charts, workbook.currentSheet.id, scrollLeft, scrollTop, updateWorkBook.versionOfCharts]);
+
+    setChartBoxes(
+      newCharts.filter(Boolean) as {
+        chartDisplayInfo: ChartBox;
+        chart: Chart;
+      }[],
+    );
+  }, [
+    charts,
+    workbook.currentSheet.id,
+    updateWorkBook.versionOfCharts,
+    offsetVersion
+  ]);
 
   useEffect(() => {
     const handleClick = async (e: KeyboardEvent) => {
-
       if (e.key === "Delete") {
-  
-        if(cellContext.chartData?.chart?.id){
-          await updateWorkBook.deleteChartFunc(cellContext.chartData?.chart?.id)
-          cellContext.setChartData(null)
-        } 
-            
+        if (cellContext.chartData?.chart?.id) {
+          await updateWorkBook.deleteChartFunc(
+            cellContext.chartData?.chart?.id,
+          );
+          cellContext.setChartData(null);
+        }
       }
     };
 
@@ -64,10 +76,14 @@ const ChartOverlay = ({ scrollLeft, scrollTop }: { scrollLeft: number; scrollTop
   }, [cellContext.chartData, cellContext, updateWorkBook]);
 
   return (
-    <div className="relative z-[66]" style={{ transform: `translate(${-scrollLeft}px, ${-scrollTop}px)` }}>
-        {chartBoxes.map((chart, index) => (
-          <ChartComponent chartDisplayInfo={chart.chartDisplayInfo} chart={chart.chart} key={`${index} chart`}/>
-        ))}
+    <div className="relative z-[66]">
+      {chartBoxes.map((chart, index) => (
+        <ChartComponent
+          chartDisplayInfo={chart.chartDisplayInfo}
+          chart={chart.chart}
+          key={`${index} chart`}
+        />
+      ))}
     </div>
   );
 };
